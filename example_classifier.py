@@ -7,7 +7,7 @@ To get started, install the required packages: pip install pandas, numpy, sklear
 
 import pandas as pd
 import numpy as np
-from sklearn import metrics, preprocessing, model_selection, linear_model
+from sklearn import metrics, preprocessing, model_selection, ensemble
 
 
 def main():
@@ -24,7 +24,7 @@ def main():
     t_id = prediction_data['t_id']
     x_prediction = prediction_data.drop('t_id', axis=1)
 
-    rf_classifier = linear_model.LogisticRegression(n_jobs=-1)
+    rf_classifier = ensemble.RandomForestClassifier(n_estimators=50, n_jobs=-1)
 
     print("Testing...")
     scores = model_selection.cross_val_score(rf_classifier, X, Y, cv=3, scoring="neg_log_loss")
