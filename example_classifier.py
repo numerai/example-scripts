@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 """
-Example classifier on Numerai data using a logistic regression classifier.
+Example classifier on Numerai data using a random forest classifier.
 To get started, install the required packages: pip install pandas, numpy, sklearn
 """
 
