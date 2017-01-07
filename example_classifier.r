@@ -1,7 +1,7 @@
 #!/usr/bin/env Rscript
 
 # Example classifier on Numerai data using random forest classifier.
-# To get started, install the required packages: install.packages(randomForest, cvTools)
+# To get started, install the required packages: install.packages(randomForest)
 
 require(randomForest)
 
