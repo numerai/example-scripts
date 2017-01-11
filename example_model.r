@@ -22,5 +22,5 @@ pred <- test[,c("t_id", "probability")]
 
 print("Writing predictions to predictions.csv")
 # Save the predictions out to a CSV file
-write.csv(pred, file="submission.csv", quote=F, row.names=F)
+write.csv(pred, file="predictions.csv", quote=F, row.names=F)
 # Now you can upload your predictions on numer.ai
