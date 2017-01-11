@@ -41,9 +41,10 @@ def main():
     results_df = pd.DataFrame(data={'probability':results})
     joined = pd.DataFrame(t_id).join(results_df)
 
-    print("Writing predictions to submission.csv")
+    print("Writing predictions to predictions.csv")
     # Save the predictions out to a CSV file
-    joined.to_csv('submission.csv', index=False)
+    joined.to_csv("predictions.csv", index=False)
+    # Now you can upload these predictions on numer.ai
 
 
 if __name__ == '__main__':

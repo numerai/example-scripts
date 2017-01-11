@@ -11,15 +11,16 @@ train <- read.csv("numerai_training_data.csv", head=T)
 test <- read.csv("numerai_tournament_data.csv", head=T)
 
 print("Training...")
-# This is your model that will learn to predict. Your model is trained on the numerai_training_data.
+# This is your model that will learn to predict. Your model is trained on the numerai_training_data
 model <- glm(as.factor(target) ~ ., data=train, family=binomial(link='logit'))
 
 print("Predicting...")
 # Your trained model is now used to make predictions on the numerai_tournament_data
-Prediction <- predict(model, test[,-1], type="response")
-test$probability <- Prediction
+predictions <- predict(model, test[,-1], type="response")
+test$probability <- predictions
 pred <- test[,c("t_id", "probability")]
 
-print("Writing predictions to submission.csv")
+print("Writing predictions to predictions.csv")
 # Save the predictions out to a CSV file
 write.csv(pred, file="submission.csv", quote=F, row.names=F)
+# Now you can upload your predictions on numer.ai
