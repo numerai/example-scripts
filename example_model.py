@@ -16,20 +16,22 @@ def main():
 
     print("Loading data...")
     # Load the data from the CSV files
-    training_data = pd.read_csv('numerai_training_data.csv', header=0)
-    prediction_data = pd.read_csv('numerai_tournament_data.csv', header=0)
+    training_data = pd.read_csv('training_data.csv', header=0)
+    prediction_data = pd.read_csv('tournament_data.csv', header=0)
+
 
     # Transform the loaded CSV data into numpy arrays
-    Y = training_data['target']
-    X = training_data.drop('target', axis=1)
-    t_id = prediction_data['t_id']
-    x_prediction = prediction_data.drop('t_id', axis=1)
+    features = [f for f in list(training_data) if "feature" in f]
+    X = training_data[features]
+    Y = training_data["target"]
+    x_prediction = prediction_data[features]
+    ids = prediction_data["id"]
 
     # This is your model that will learn to predict
     model = linear_model.LogisticRegression(n_jobs=-1)
 
     print("Training...")
-    # Your model is trained on the numerai_training_data
+    # Your model is trained on the training_data
     model.fit(X, Y)
 
     print("Predicting...")
@@ -38,8 +40,8 @@ def main():
     # We are just interested in the probability that the target is 1.
     y_prediction = model.predict_proba(x_prediction)
     results = y_prediction[:, 1]
-    results_df = pd.DataFrame(data={'probability':results})
-    joined = pd.DataFrame(t_id).join(results_df)
+    results_df = pd.DataFrame(data={'prediction':results})
+    joined = pd.DataFrame(ids).join(results_df)
 
     print("Writing predictions to predictions.csv")
     # Save the predictions out to a CSV file
