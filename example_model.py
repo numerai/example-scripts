@@ -40,7 +40,7 @@ def main():
     # We are just interested in the probability that the target is 1.
     y_prediction = model.predict_proba(x_prediction)
     results = y_prediction[:, 1]
-    results_df = pd.DataFrame(data={'prediction':results})
+    results_df = pd.DataFrame(data={'probability':results})
     joined = pd.DataFrame(ids).join(results_df)
 
     print("Writing predictions to predictions.csv")

@@ -23,7 +23,7 @@ print("Predicting...")
 # Your trained model is now used to make predictions on the numerai_tournament_data
 predictions <- predict(model, test[,-1], type="response")
 test$probability <- predictions
-pred <- test[,c("id", "prediction")]
+pred <- test[,c("id", "probability")]
 
 print("Writing predictions to predictions.csv")
 # Save the predictions out to a CSV file
