@@ -16,8 +16,8 @@ def main():
 
     print("Loading data...")
     # Load the data from the CSV files
-    training_data = pd.read_csv('training_data.csv', header=0)
-    prediction_data = pd.read_csv('tournament_data.csv', header=0)
+    training_data = pd.read_csv('numerai_training_data.csv', header=0)
+    prediction_data = pd.read_csv('numerai_tournament_data.csv', header=0)
 
 
     # Transform the loaded CSV data into numpy arrays
