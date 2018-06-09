@@ -42,7 +42,7 @@ def main():
     # This is your model that will learn to predict this target.
     model = linear_model.LogisticRegression(n_jobs=-1)
     print("# Training...")
-    # Your model is trained on the train_bernie
+    # Your model is trained on train_bernie
     model.fit(X, Y)
 
     print("# Predicting...")
