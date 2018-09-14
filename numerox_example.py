@@ -23,7 +23,7 @@ def numerox_example():
     prediction = nx.production(model, data, tournament='bernie')
 
     # save predictions to csv file
-    prediction.to_csv('logistic.csv', tournament='bernie', verbose=True)
+    prediction.to_csv('logistic.csv', verbose=True)
 
     # upload predictions to Numerai to enter the tournament
     #
