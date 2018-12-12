@@ -10,10 +10,10 @@ tournament<-read.csv("numerai_tournament_data.csv", header=T)
 #validation is used to test your model locally so we separate that
 validation<-tournament[tournament$data_type=="validation",]
 
-#There are five targets in the training data which you can choose to model using the features.
+#There are multiple targets in the training data which you can choose to model using the features.
 #Numerai does not say what the features mean but that's fine; we can still build a model.
 #Here we select the bernie_target
-train_bernie<-subset(train, select=-c(id, era, data_type, target_charles, target_elizabeth, target_jordan, target_ken))
+train_bernie<-subset(train, select=-c(id, era, data_type, target_charles, target_elizabeth, target_jordan, target_ken, target_frank, target_hillary))
 head(train_bernie)
 
 #build a gbm model to predict this target

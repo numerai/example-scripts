@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-
 """
 Example classifier on Numerai data using a logistic regression classifier.
 To get started, install the required packages: pip install pandas, numpy, sklearn
@@ -22,15 +21,16 @@ def main():
 
     # The tournament data contains validation data, test data and live data.
     # Validation is used to test your model locally so we separate that.
-    validation = tournament[tournament['data_type']=='validation']
+    validation = tournament[tournament['data_type'] == 'validation']
 
-    # There are five targets in the training data which you can choose to model using the features.
+    # There are multiple targets in the training data which you can choose to model using the features.
     # Numerai does not say what the features mean but that's fine; we can still build a model.
     # Here we select the bernie_target.
     train_bernie = train.drop([
-        'id', 'era', 'data_type',
-        'target_charles', 'target_elizabeth',
-        'target_jordan', 'target_ken'], axis=1)
+        'id', 'era', 'data_type', 'target_charles', 'target_elizabeth',
+        'target_jordan', 'target_ken', 'target_frank', 'target_hillary'
+    ],
+                              axis=1)
 
     # Transform the loaded CSV data into numpy arrays
     features = [f for f in list(train_bernie) if "feature" in f]
@@ -60,20 +60,29 @@ def main():
     print("- rounded probability:", [round(p) for p in probabilities][1:6])
 
     # But overall the accuracy is very low.
-    correct = [round(x)==y for (x,y) in zip(probabilities, validation['target_bernie'])]
-    print("- accuracy: ", sum(correct)/float(validation.shape[0]))
+    correct = [
+        round(x) == y
+        for (x, y) in zip(probabilities, validation['target_bernie'])
+    ]
+    print("- accuracy: ", sum(correct) / float(validation.shape[0]))
 
     # The targets for each of the tournaments are very correlated.
-    tournament_corr = np.corrcoef(validation['target_bernie'], validation['target_elizabeth'])
+    tournament_corr = np.corrcoef(validation['target_bernie'],
+                                  validation['target_elizabeth'])
     print("- bernie vs elizabeth corr:", tournament_corr)
     # You can see that target_elizabeth is accurate using the bernie model as well.
-    correct = [round(x)==y for (x,y) in zip(probabilities, validation['target_elizabeth'])]
-    print("- elizabeth using bernie:", sum(correct)/float(validation.shape[0]))
+    correct = [
+        round(x) == y
+        for (x, y) in zip(probabilities, validation['target_elizabeth'])
+    ]
+    print("- elizabeth using bernie:",
+          sum(correct) / float(validation.shape[0]))
 
     # Numerai measures models on logloss instead of accuracy. The lower the logloss the better.
     # Numerai only pays models with logloss < 0.693 on the live portion of the tournament data.
     # Our validation logloss isn't very good.
-    print("- validation logloss:", metrics.log_loss(validation['target_bernie'], probabilities))
+    print("- validation logloss:",
+          metrics.log_loss(validation['target_bernie'], probabilities))
 
     # To submit predictions from your model to Numerai, predict on the entire tournament data.
     x_prediction = tournament[features]
@@ -82,7 +91,7 @@ def main():
 
     print("# Creating submission...")
     # Create your submission
-    results_df = pd.DataFrame(data={'probability':results})
+    results_df = pd.DataFrame(data={'probability': results})
     joined = pd.DataFrame(ids).join(results_df)
     print("- joined:", joined.head())
 
@@ -90,6 +99,7 @@ def main():
     # Save the predictions out to a CSV file.
     joined.to_csv("bernie_submission.csv", index=False)
     # Now you can upload these predictions on https://numer.ai
+
 
 """
 TIPS TO IMPROVE YOUR MODEL
