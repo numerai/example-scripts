@@ -37,10 +37,10 @@ cor(validation$target_bernie, validation$target_elizabeth)
 #you can see that target_elizabeth is accurate using the bernie model as well
 sum(round(probabilities)==validation$target_elizabeth)/nrow(validation)
 
-#Numerai measures models on logloss instead of accuracy. The lower the logloss the better.
-#Numerai only pays models with logloss < 0.693 on the live portion of the tournament data.
-#Our validation logloss isn't very good.
-logLoss(validation$target_bernie, probabilities)
+#Numerai measures models on AUC. The higher the AUC the better.
+#Numerai only pays models with AUC that beat the benchmark on the live portion of the tournament data.
+#Our validation AUC isn't very good.
+auc(validation$target_bernie, probabilities)
 
 #to submit predictions from your model to Numerai, predict on the entire tournament data
 tournament$probability_bernie<-predict.gbm(model, tournament, n.trees=10, type="response")
@@ -72,4 +72,4 @@ write.csv(submission, file="bernie_submission2.csv", row.names=F)
 
 #3. Use all the targets
 #As we saw above, a model trained on one target like target_bernie might be good at predicting another target
-#like target_elizabeth. Blending models built on each target could also improve your logloss and consistency.
+#like target_elizabeth. Blending models built on each target could also improve your AUC.
