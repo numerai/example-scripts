@@ -6,7 +6,7 @@ To get started, install the required packages: pip install pandas, numpy, sklear
 
 import pandas as pd
 import numpy as np
-from sklearn import metrics, preprocessing, linear_model
+from sklearn import metrics, linear_model
 
 
 def main():
@@ -78,11 +78,11 @@ def main():
     print("- elizabeth using bernie:",
           sum(correct) / float(validation.shape[0]))
 
-    # Numerai measures models on logloss instead of accuracy. The lower the logloss the better.
-    # Numerai only pays models with logloss < 0.693 on the live portion of the tournament data.
-    # Our validation logloss isn't very good.
-    print("- validation logloss:",
-          metrics.log_loss(validation['target_bernie'], probabilities))
+    # Numerai measures models on AUC. The higher the AUC the better.
+    # Numerai only pays models with AUC that beat the benchmark on the live portion of the tournament data.
+    # Our validation AUC isn't very good.
+    print("- validation AUC:",
+          metrics.roc_auc_score(validation['target_bernie'], probabilities))
 
     # To submit predictions from your model to Numerai, predict on the entire tournament data.
     x_prediction = tournament[features]
@@ -121,7 +121,7 @@ more likely to be consistent across eras.
 
 3. Use all the targets
 As we saw above, a model trained on one target like target_bernie might be good at predicting another target
-like target_elizabeth. Blending models built on each target could also improve your logloss and consistency.
+like target_elizabeth. Blending models built on each target could also improve your AUC.
 """
 
 if __name__ == '__main__':
