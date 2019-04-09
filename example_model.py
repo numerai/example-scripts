@@ -6,7 +6,8 @@ To get started, install the required packages: pip install pandas, numpy, sklear
 
 import pandas as pd
 import numpy as np
-from sklearn import metrics, linear_model
+from sklearn import decomposition, ensemble, metrics, pipeline
+from xgboost import XGBClassifier
 
 
 def main():
@@ -40,7 +41,14 @@ def main():
     ids = tournament['id']
 
     # This is your model that will learn to predict this target.
-    model = linear_model.LogisticRegression(n_jobs=-1)
+    model = pipeline.make_pipeline(
+	decomposition.PCA(),
+	ensemble.BaggingClassifier(
+	    XGBClassifier(),
+	    n_jobs=-1,
+	    max_samples=0.5
+	)
+    )
     print("# Training...")
     # Your model is trained on train_bernie
     model.fit(X, Y)
