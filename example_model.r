@@ -20,16 +20,17 @@ tournament<-read.csv("numerai_tournament_data.csv", header=T)
 #validation is a hold out set out of sample and further in time (higher eras) than the training data
 validation<-tournament[tournament$data_type=="validation",]
 
+benchmark<-0.002
 consistency<-function(data_with_probs, target_name){
   unique_eras<-unique(data_with_probs$era)
-  era_corscore<-vector()
+  era_correlation<-vector()
   i<-1
   while(i<=length(unique_eras)){
     this_data<-data_with_probs[data_with_probs$era==unique_eras[i],]
-    era_corscore[i]<-cor(this_data[,names(this_data)==target_name], this_data$prediction, method="spearman")
+    era_correlation[i]<-cor(this_data[,names(this_data)==target_name], this_data$prediction, method="spearman")
     i<-i+1
   }
-  consistency<-sum(era_corscore>0)/length(era_corscore)
+  consistency<-sum(era_correlation>benchmark)/length(era_correlation)
   consistency
 }
 
@@ -79,7 +80,7 @@ head(predictions)
 cor(validation$target_kazutsugi, predictions, method="spearman")
 val<-validation
 val$prediction<-predictions
-#consistency is the fraction of months where the model achieves better than zero correlation with the targets (>0.5 CorScore)
+#consistency is the fraction of months where the model achieves better correlation with the targets than the benchmark
 consistency(val, "target_kazutsugi")
 
 #we try a gbm model; we also choose a low bag fraction of 10% as a strategy to deal with within-era non-independence (which is a property of this data)
@@ -100,7 +101,7 @@ val<-validation
 val$prediction<-predictions
 consistency(val, "target_kazutsugi")
 
-#the gbm model and random forest model have the same consistency (number of eras where CorScore is greater than 0.5) even though corScores are different
+#the gbm model and random forest model have the same consistency (number of eras where correlation > benchmark) even though correlation are different
 #improving consistency can be more important than improving standard machine learning metrics like RMSE
 #good models might train in such a way as to minimize the error across eras (improve consistency) not just reduce the error on each training example
 
@@ -130,7 +131,7 @@ predictions<-predict.gbm(model, second_half, n.trees=best.iter, type="response")
 0.5+cor(second_half$target_kazutsugi, predictions, method="spearman")
 sec<-second_half
 sec$prediction<-predictions
-#consistency is the fraction of months where the model achieves better than zero correlation with the targets (>0.5 CorScore)
+#consistency is the fraction of months where the model achieves better correlation with the targets than the benchmark
 consistency(sec, "target_kazutsugi")
 
 #but now we try build a model on the second half of the eras and predict on the first half
@@ -148,7 +149,7 @@ predictions<-predict.gbm(model, first_half, n.trees=best.iter, type="response")
 cor(first_half$target_kazutsugi, predictions, method="spearman")
 fir<-first_half
 fir$prediction<-predictions
-#consistency is the fraction of months where the model achieves better than zero correlation with the targets (>0.5 CorScore)
+#consistency is the fraction of months where the model achieves better correlation with the targets than the benchmark
 consistency(fir, "target_kazutsugi")
 
 #Numerai only pays models with correlations that beat the benchmark on the live portion of the tournament data
