@@ -11,7 +11,7 @@ from xgboost import XGBRegressor
 
 TOURNAMENT_NAME = "kazutsugi"
 TARGET_NAME = f"target_{TOURNAMENT_NAME}"
-PREDICTION_NAME = f"predict_{TOURNAMENT_NAME}"
+PREDICTION_NAME = f"prediction_{TOURNAMENT_NAME}"
 
 BENCHMARK = 0.002
 BAND = 0.04
