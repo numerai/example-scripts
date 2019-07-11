@@ -19,7 +19,11 @@ BAND = 0.04
 
 # Submissions are scored by spearman correlation
 def score(df):
-    return df[[TARGET_NAME, PREDICTION_NAME]].corr(method="spearman")[TARGET_NAME][PREDICTION_NAME]
+    # method="first" breaks ties based on order in array
+    return np.corrcoef(
+        df[TARGET_NAME],
+	df[PREDICTION_NAME].rank(pct=True, method="first")
+    )[0,1]
 
 
 # The payout function
@@ -39,6 +43,7 @@ def main():
     print(f"Loaded {len(feature_names)} features")
 
     print("Training model")
+    # For faster experimentation you can decrease n_estimators to 200, for better performance increase to 20,000
     model = XGBRegressor(max_depth=5, learning_rate=0.01, n_estimators=2000, n_jobs=-1, colsample_bytree=0.1)
     model.fit(training_data[feature_names], training_data[TARGET_NAME])
 
