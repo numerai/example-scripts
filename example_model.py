@@ -1,11 +1,13 @@
 #!/usr/bin/env python
 """
 Example classifier on Numerai data using a xgboost regression.
-To get started, install the required packages: pip install pandas numpy sklearn xgboost
+To get started, install the required packages: pip install pandas numpy sklearn xgboost joblib
 """
 
+import joblib
 import pandas as pd
 import numpy as np
+from joblib import dump
 from xgboost import XGBRegressor
 
 
@@ -44,8 +46,14 @@ def main():
 
     print("Training model")
     # For faster experimentation you can decrease n_estimators to 200, for better performance increase to 20,000
-    model = XGBRegressor(max_depth=5, learning_rate=0.01, n_estimators=2000, n_jobs=-1, colsample_bytree=0.1)
+    model = XGBRegressor(max_depth=5, learning_rate=0.1, n_estimators=200, n_jobs=-1, colsample_bytree=0.1)
+    ## model = XGBRegressor(max_depth=5, learning_rate=0.01, n_estimators=2000, n_jobs=-1, colsample_bytree=0.1)
+    # This is the model for the example predictions.
+    ## model = XGBRegressor(max_depth=5, learning_rate=0.001, n_estimators=20000, n_jobs=-1, colsample_bytree=0.1)
     model.fit(training_data[feature_names], training_data[TARGET_NAME])
+
+    # If you have a previously saved model you can load it without training again
+    ## model = joblib.load("example_model.pkl")
 
     print("Generating predictions")
     training_data[PREDICTION_NAME] = model.predict(training_data[feature_names])
@@ -61,6 +69,9 @@ def main():
     validation_correlations = validation_data.groupby("era").apply(score)
     print(f"On validation the correlation has mean {validation_correlations.mean()} and std {validation_correlations.std()}")
     print(f"On validation the average per-era payout is {payout(validation_correlations).mean()}")
+
+    # Save the model for the future so we can run it without training again.
+    joblib.dump(model, "example_model.pkl")
 
     tournament_data[PREDICTION_NAME].to_csv(TOURNAMENT_NAME + "_submission.csv")
     # Now you can upload these predictions on https://numer.ai
