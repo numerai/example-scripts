@@ -13,8 +13,8 @@ TOURNAMENT_NAME = "kazutsugi"
 TARGET_NAME = f"target_{TOURNAMENT_NAME}"
 PREDICTION_NAME = f"prediction_{TOURNAMENT_NAME}"
 
-BENCHMARK = 0.002
-BAND = 0.04
+BENCHMARK = 0
+BAND = 0.2
 
 
 # Submissions are scored by spearman correlation
