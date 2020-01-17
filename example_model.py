@@ -4,6 +4,8 @@ Example classifier on Numerai data using a xgboost regression.
 To get started, install the required packages: pip install pandas numpy sklearn xgboost
 """
 
+import csv
+
 import pandas as pd
 import numpy as np
 from xgboost import XGBRegressor
@@ -22,7 +24,7 @@ def score(df):
     # method="first" breaks ties based on order in array
     return np.corrcoef(
         df[TARGET_NAME],
-	df[PREDICTION_NAME].rank(pct=True, method="first")
+    df[PREDICTION_NAME].rank(pct=True, method="first")
     )[0,1]
 
 
@@ -31,13 +33,22 @@ def payout(scores):
     return ((scores - BENCHMARK)/BAND).clip(lower=-1, upper=1)
 
 
+# Read the csv file into a pandas Dataframe
+def read_csv(file_path):
+    with open(file_path, 'r') as f:
+        column_names = next(csv.reader(f))
+        dtypes = {x: np.float16 for x in column_names if
+                  x.startswith(('feature', 'target'))}
+    return pd.read_csv(file_path, dtype=dtypes)
+
+
 def main():
 
     print("# Loading data...")
     # The training data is used to train your model how to predict the targets.
-    training_data = pd.read_csv("numerai_training_data.csv").set_index("id")
+    training_data = read_csv("numerai_training_data.csv").set_index("id")
     # The tournament data is the data that Numerai uses to evaluate your model.
-    tournament_data = pd.read_csv("numerai_tournament_data.csv").set_index("id")
+    tournament_data = read_csv("numerai_tournament_data.csv").set_index("id")
 
     feature_names = [f for f in training_data.columns if f.startswith("feature")]
     print(f"Loaded {len(feature_names)} features")
