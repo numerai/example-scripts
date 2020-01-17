@@ -10,7 +10,6 @@ import pandas as pd
 import numpy as np
 from xgboost import XGBRegressor
 
-
 TOURNAMENT_NAME = "kazutsugi"
 TARGET_NAME = f"target_{TOURNAMENT_NAME}"
 PREDICTION_NAME = f"prediction_{TOURNAMENT_NAME}"
@@ -24,13 +23,13 @@ def score(df):
     # method="first" breaks ties based on order in array
     return np.corrcoef(
         df[TARGET_NAME],
-    df[PREDICTION_NAME].rank(pct=True, method="first")
-    )[0,1]
+        df[PREDICTION_NAME].rank(pct=True, method="first")
+    )[0, 1]
 
 
 # The payout function
 def payout(scores):
-    return ((scores - BENCHMARK)/BAND).clip(lower=-1, upper=1)
+    return ((scores - BENCHMARK) / BAND).clip(lower=-1, upper=1)
 
 
 # Read the csv file into a pandas Dataframe
@@ -43,7 +42,6 @@ def read_csv(file_path):
 
 
 def main():
-
     print("# Loading data...")
     # The training data is used to train your model how to predict the targets.
     training_data = read_csv("numerai_training_data.csv").set_index("id")
@@ -70,7 +68,8 @@ def main():
     # Check the per-era correlations on the validation set
     validation_data = tournament_data[tournament_data.data_type == "validation"]
     validation_correlations = validation_data.groupby("era").apply(score)
-    print(f"On validation the correlation has mean {validation_correlations.mean()} and std {validation_correlations.std()}")
+    print(
+        f"On validation the correlation has mean {validation_correlations.mean()} and std {validation_correlations.std()}")
     print(f"On validation the average per-era payout is {payout(validation_correlations).mean()}")
 
     tournament_data[PREDICTION_NAME].to_csv(TOURNAMENT_NAME + "_submission.csv")
