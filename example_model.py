@@ -49,7 +49,7 @@ def read_csv(file_path):
 def main():
     print("Loading data...")
     # The training data is used to train your model how to predict the targets.
-    training_data = read_csv("numerai_training_data_small.csv")
+    training_data = read_csv("numerai_training_data.csv")
     # The tournament data is the data that Numerai uses to evaluate your model.
     tournament_data = read_csv("numerai_tournament_data.csv")
 
