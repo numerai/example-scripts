@@ -5,6 +5,7 @@ To get started, install the required packages: pip install pandas numpy sklearn 
 """
 
 import csv
+from pathlib import Path
 
 import pandas as pd
 import numpy as np
@@ -13,6 +14,8 @@ from xgboost import XGBRegressor
 TOURNAMENT_NAME = "kazutsugi"
 TARGET_NAME = f"target_{TOURNAMENT_NAME}"
 PREDICTION_NAME = f"prediction_{TOURNAMENT_NAME}"
+
+MODEL_FILE = Path("example_model.xgb")
 
 
 # Submissions are scored by spearman correlation
@@ -34,7 +37,7 @@ def read_csv(file_path):
         column_names = next(csv.reader(f))
 
     dtypes = {x: np.float16 for x in column_names if x.startswith(('feature', 'target'))}
-    df = pd.read_csv(file_path, dtype=dtypes)
+    df = pd.read_csv(file_path, dtype=dtypes, index_col=0)
 
     # Memory constrained? Try this instead (slower, but more memory efficient)
     # see https://forum.numer.ai/t/saving-memory-with-uint8-features/254
@@ -43,7 +46,7 @@ def read_csv(file_path):
     # converters = {x: to_uint8 for x in column_names if x.startswith('feature')}
     # df = pd.read_csv(file_path, dtype=dtypes, converters=converters)
 
-    return df.set_index("id")
+    return df
 
 
 def main():
@@ -58,11 +61,17 @@ def main():
     ]
     print(f"Loaded {len(feature_names)} features")
 
-    print("Training model...")
-    # This is the model that generates the included example predictions file
-    # Taking too long? Set learning_rate=0.1 and n_estimators=200 to make this run faster
+    # This is the model that generates the included example predictions file.
+    # Taking too long? Set learning_rate=0.1 and n_estimators=200 to make this run faster.
+    # Remember to delete example_model.xgb if you change any of the parameters below.
     model = XGBRegressor(max_depth=5, learning_rate=0.01, n_estimators=2000, n_jobs=-1, colsample_bytree=0.1)
-    model.fit(training_data[feature_names], training_data[TARGET_NAME])
+    if MODEL_FILE.is_file():
+        print("Loading pre-trained model...")
+        model.load_model(MODEL_FILE)
+    else:
+        print("Training model...")
+        model.fit(training_data[feature_names], training_data[TARGET_NAME])
+        model.save_model(MODEL_FILE)
 
     # Generate predictions on both training and tournament data
     print("Generating predictions...")
@@ -77,7 +86,8 @@ def main():
     # Check the per-era correlations on the validation set (out of sample)
     validation_data = tournament_data[tournament_data.data_type == "validation"]
     validation_correlations = validation_data.groupby("era").apply(score)
-    print(f"On validation the correlation has mean {validation_correlations.mean()} and std {validation_correlations.std()}")
+    print(f"On validation the correlation has mean {validation_correlations.mean()} and "
+          f"std {validation_correlations.std()}")
     print(f"On validation the average per-era payout is {payout(validation_correlations).mean()}")
 
     # Save predictions as a CSV and upload to https://numer.ai
