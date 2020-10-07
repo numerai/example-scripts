@@ -37,7 +37,7 @@ def main():
     napi = numerapi.SignalsAPI()
 
     # read in list of active Signals tickers which can change slightly era to era
-    eligible_tickers = pd.Series(napi.ticker_universe()[1:], name='ticker')
+    eligible_tickers = pd.Series(napi.ticker_universe(), name='bloomberg_ticker')
     print(f"Number of eligible tickers: {len(eligible_tickers)}")
 
     # read in yahoo to numerai ticker map, still a work in progress, h/t wsouza
