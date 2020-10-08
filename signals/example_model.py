@@ -10,8 +10,7 @@ import pandas as pd
 import requests as re
 from datetime import datetime
 from dateutil.relativedelta import relativedelta, FR
-
-from xgboost import XGBRegressor
+from sklearn.linear_model import LinearRegression
 
 
 def RSI(prices, interval=10):
@@ -40,7 +39,7 @@ def main():
     eligible_tickers = pd.Series(napi.ticker_universe(), name='bloomberg_ticker')
     print(f"Number of eligible tickers: {len(eligible_tickers)}")
 
-    # read in yahoo to numerai ticker map, still a work in progress, h/t wsouza
+    # read in yahoo to bloomberg ticker map, still a work in progress, h/t wsouza
     ticker_map = pd.read_csv(
         'https://numerai-signals-public-data.s3-us-west-2.amazonaws.com/signals_ticker_map_w_bbg.csv'
     )
@@ -117,7 +116,7 @@ def main():
     print(f'Features for training:\n {feature_names}')
 
     TARGET_NAME = 'target'
-    PREDICTION_NAME = 'prediction'
+    PREDICTION_NAME = 'signal'
 
     # read in Signals targets
     targets = pd.read_csv('historical_targets.csv')
@@ -141,7 +140,7 @@ def main():
 
     # train model
     print("Training model...")
-    model = XGBRegressor(subsample=0.1)
+    model = LinearRegression()
     model.fit(train_data[feature_names], train_data[TARGET_NAME])
     print("Model trained.")
 
