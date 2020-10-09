@@ -1,4 +1,6 @@
 import numerapi
+# a fork of yfinance that implements retries nicely
+# pip install -e git+http://github.com/leonhma/yfinance.git@master#egg=yfinance
 import yfinance
 import simplejson
 
@@ -8,9 +10,7 @@ import pandas as pd
 import requests as re
 from datetime import datetime
 from dateutil.relativedelta import relativedelta, FR
-
-from sklearn.ensemble import GradientBoostingRegressor
-from xgboost import XGBRegressor
+from sklearn.linear_model import LinearRegression
 
 
 def RSI(prices, interval=10):
@@ -36,23 +36,23 @@ def main():
     napi = numerapi.SignalsAPI()
 
     # read in list of active Signals tickers which can change slightly era to era
-    eligible_tickers = pd.Series(napi.ticker_universe()[1:], name='ticker')
+    eligible_tickers = pd.Series(napi.ticker_universe(), name='bloomberg_ticker')
     print(f"Number of eligible tickers: {len(eligible_tickers)}")
 
-    # read in yahoo to numerai ticker map, still a work in progress, h/t wsouza
+    # read in yahoo to bloomberg ticker map, still a work in progress, h/t wsouza
     ticker_map = pd.read_csv(
-        'https://numerai-signals-public-data.s3-us-west-2.amazonaws.com/signals_ticker_map.csv'
+        'https://numerai-signals-public-data.s3-us-west-2.amazonaws.com/signals_ticker_map_w_bbg.csv'
     )
     print(f"Number of tickers in map: {len(ticker_map)}")
 
     # map eligible numerai tickers to yahoo finance tickers
     yfinance_tickers = eligible_tickers.map(
-        dict(zip(ticker_map['numerai'], ticker_map['yahoo']))).dropna()
-    numerai_tickers = ticker_map['numerai']
+        dict(zip(ticker_map['bloomberg_ticker'], ticker_map['yahoo']))).dropna()
+    bloomberg_tickers = ticker_map['bloomberg_ticker']
     print(f'Number of eligible, mapped tickers: {len(yfinance_tickers)}')
 
     # download data
-    n = 1000  #chunk row size
+    n = 1000  # chunk row size
     chunk_df = [
         yfinance_tickers.iloc[i:i + n]
         for i in range(0, len(yfinance_tickers), n)
@@ -69,7 +69,7 @@ def main():
                                         threads=False)
             temp_df = temp_df['Adj Close'].stack().reset_index()
             concat_dfs.append(temp_df)
-        except:  #simplejson.errors.JSONDecodeError:
+        except:  # simplejson.errors.JSONDecodeError:
             pass
 
     full_data = pd.concat(concat_dfs)
@@ -78,10 +78,10 @@ def main():
     full_data.columns = ['date', 'ticker', 'price']
     full_data.set_index('date', inplace=True)
     # convert yahoo finance tickers back to numerai tickers
-    full_data['ticker'] = full_data.ticker.map(
-        dict(zip(yfinance_tickers, numerai_tickers)))
+    full_data['bloomberg_ticker'] = full_data.ticker.map(
+        dict(zip(yfinance_tickers, bloomberg_tickers)))
     print('Data downloaded.')
-    print(f"Number of tickers with data: {len(full_data.ticker.unique())}")
+    print(f"Number of tickers with data: {len(full_data.bloomberg_ticker.unique())}")
 
     ticker_groups = full_data.groupby('ticker')
     full_data['RSI'] = ticker_groups['price'].transform(lambda x: RSI(x))
@@ -92,7 +92,7 @@ def main():
         lambda group: pd.qcut(group, 5, labels=False, duplicates='drop'))
     full_data.dropna(inplace=True)
 
-    #create lagged features grouped by ticker
+    # create lagged features grouped by ticker
     ticker_groups = full_data.groupby('ticker')
     num_days = 5
     # lag 0 is that day's value, lag 1 is yesterday's value, etc
@@ -103,8 +103,8 @@ def main():
     # create difference of the lagged features and absolute difference of the lagged features (change in RSI quintile by day)
     for day in range(num_days):
         full_data[f'RSI_diff_{day}'] = full_data[
-            f'RSI_quintile_lag_{day}'] - full_data[
-                f'RSI_quintile_lag_{day + 1}']
+                                           f'RSI_quintile_lag_{day}'] - full_data[
+                                           f'RSI_quintile_lag_{day + 1}']
         full_data[f'RSI_abs_diff_{day}'] = np.abs(
             full_data[f'RSI_quintile_lag_{day}'] -
             full_data[f'RSI_quintile_lag_{day + 1}'])
@@ -116,15 +116,15 @@ def main():
     print(f'Features for training:\n {feature_names}')
 
     TARGET_NAME = 'target'
-    PREDICTION_NAME = 'prediction'
+    PREDICTION_NAME = 'signal'
 
     # read in Signals targets
-    targets = pd.read_csv('train_and_validation.csv')
+    targets = pd.read_csv('historical_targets.csv')
     targets['date'] = pd.to_datetime(targets['friday_date'], format='%Y%m%d')
 
     # merge our feature data with Numerai targets
     ML_data = pd.merge(full_data.reset_index(), targets,
-                       on=['date', 'ticker']).set_index('date')
+                       on=['date', 'bloomberg_ticker']).set_index('date')
     # print(f'Number of eras in data: {len(ML_data.index.unique())}')
 
     # for training and testing we want clean, complete data only
@@ -140,7 +140,7 @@ def main():
 
     # train model
     print("Training model...")
-    model = GradientBoostingRegressor(subsample=0.1)
+    model = LinearRegression()
     model.fit(train_data[feature_names], train_data[TARGET_NAME])
     print("Model trained.")
 
@@ -162,9 +162,9 @@ def main():
     diagnostic_df['friday_date'] = diagnostic_df.friday_date.fillna(
         last_friday.strftime('%Y%m%d')).astype(int)
     diagnostic_df['data_type'] = diagnostic_df.data_type.fillna('live')
-    diagnostic_df[['ticker', 'friday_date', 'data_type',
-                   'prediction']].reset_index(drop=True).to_csv(
-                       'example_signal_upload.csv', index=False)
+    diagnostic_df[['bloomberg_ticker', 'friday_date', 'data_type',
+                   'signal']].reset_index(drop=True).to_csv(
+        'example_signal_upload.csv', index=False)
     print(
         'Example submission completed. Upload to signals.numer.ai for scores and live submission'
     )
