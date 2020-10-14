@@ -10,7 +10,7 @@ import pandas as pd
 import requests as re
 from datetime import datetime
 from dateutil.relativedelta import relativedelta, FR
-from sklearn.linear_model import LinearRegression
+from sklearn.ensemble import GradientBoostingRegressor
 
 
 def RSI(prices, interval=10):
@@ -140,7 +140,7 @@ def main():
 
     # train model
     print("Training model...")
-    model = LinearRegression()
+    model = GradientBoostingRegressor(subsample=0.1)
     model.fit(train_data[feature_names], train_data[TARGET_NAME])
     print("Model trained.")
 
