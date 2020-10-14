@@ -79,7 +79,7 @@ def main():
     full_data.set_index('date', inplace=True)
     # convert yahoo finance tickers back to numerai tickers
     full_data['bloomberg_ticker'] = full_data.ticker.map(
-        dict(zip(yfinance_tickers, bloomberg_tickers)))
+        dict(zip(ticker_map['yahoo'], bloomberg_tickers)))
     print('Data downloaded.')
     print(f"Number of tickers with data: {len(full_data.bloomberg_ticker.unique())}")
 
