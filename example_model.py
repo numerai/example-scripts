@@ -11,9 +11,8 @@ import pandas as pd
 import numpy as np
 from xgboost import XGBRegressor
 
-TOURNAMENT_NAME = "kazutsugi"
-TARGET_NAME = f"target_{TOURNAMENT_NAME}"
-PREDICTION_NAME = f"prediction_{TOURNAMENT_NAME}"
+TARGET_NAME = f"target"
+PREDICTION_NAME = f"prediction"
 
 MODEL_FILE = Path("example_model.xgb")
 
@@ -44,7 +43,7 @@ def read_csv(file_path):
 
     # Memory constrained? Try this instead (slower, but more memory efficient)
     # see https://forum.numer.ai/t/saving-memory-with-uint8-features/254
-    # dtypes = {f"target_{TOURNAMENT_NAME}": np.float16}
+    # dtypes = {f"target": np.float16}
     # to_uint8 = lambda x: np.uint8(float(x) * 4)
     # converters = {x: to_uint8 for x in column_names if x.startswith('feature')}
     # df = pd.read_csv(file_path, dtype=dtypes, converters=converters)
@@ -117,7 +116,7 @@ def main():
     print(f"Feature Neutral Mean is {feature_neutral_mean}")
 
     # Load example preds to get MMC metrics
-    example_preds = pd.read_csv("example_predictions_target_kazutsugi.csv").set_index("id")["prediction_kazutsugi"]
+    example_preds = pd.read_csv("example_predictions.csv").set_index("id")["prediction"]
     validation_example_preds = example_preds.loc[validation_data.index]
     validation_data["ExamplePreds"] = validation_example_preds
 
@@ -151,7 +150,7 @@ def main():
     print(f"Corr with example preds: {corr_with_example_preds}")
 
     # Save predictions as a CSV and upload to https://numer.ai
-    tournament_data[PREDICTION_NAME].to_csv(TOURNAMENT_NAME + "_submission.csv")
+    tournament_data[PREDICTION_NAME].to_csv("submission.csv")
 
 
 """ 
