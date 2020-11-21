@@ -90,11 +90,11 @@ def main():
     validation_data = tournament_data[tournament_data.data_type == "validation"]
     validation_correlations = validation_data.groupby("era").apply(score)
     print(f"On validation the correlation has mean {validation_correlations.mean()} and "
-          f"std {validation_correlations.std()}")
+          f"std {validation_correlations.std(ddof=0)}")
     print(f"On validation the average per-era payout is {payout(validation_correlations).mean()}")
 
     # Check the "sharpe" ratio on the validation set
-    validation_sharpe = validation_correlations.mean() / validation_correlations.std()
+    validation_sharpe = validation_correlations.mean() / validation_correlations.std(ddof=0)
     print(f"Validation Sharpe: {validation_sharpe}")
 
     print("checking max drawdown...")
@@ -107,7 +107,9 @@ def main():
     # Check the feature exposure of your validation predictions
     feature_exposures = validation_data[feature_names].apply(lambda d: correlation(validation_data[PREDICTION_NAME], d),
                                                              axis=0)
-    max_feature_exposure = np.max(np.abs(feature_exposures))
+    max_per_era = validation_data.groupby("era").apply(
+        lambda d: d[feature_names].corrwith(d[PREDICTION_NAME]).abs().max())
+    max_feature_exposure = max_per_era.mean()
     print(f"Max Feature Exposure: {max_feature_exposure}")
 
     # Check feature neutral mean
@@ -145,12 +147,14 @@ def main():
     )
 
     # Check correlation with example predictions
-    corr_with_example_preds = np.corrcoef(validation_example_preds.rank(pct=True, method="first"),
-                                          validation_data[PREDICTION_NAME].rank(pct=True, method="first"))[0, 1]
+    full_df = pd.concat([validation_example_preds, validation_data[PREDICTION_NAME], validation_data["era"]], axis=1)
+    full_df.columns = ["example_preds", "prediction", "era"]
+    per_era_corrs = full_df.groupby('era').apply(lambda d: correlation(unif(d["prediction"]), unif(d["example_preds"])))
+    corr_with_example_preds = per_era_corrs.mean()
     print(f"Corr with example preds: {corr_with_example_preds}")
 
     # Save predictions as a CSV and upload to https://numer.ai
-    tournament_data[PREDICTION_NAME].to_csv("submission.csv")
+    tournament_data[PREDICTION_NAME].to_csv("submission.csv", header=True)
 
 
 """ 
@@ -158,19 +162,43 @@ functions used for advanced metrics
 """
 
 
-# to neutralize a column in a df by many other columns
-def neutralize(df, columns, by, proportion=1.0):
-    scores = df.loc[:, columns]
-    exposures = df[by].values
+# to neutralize a column in a df by many other columns on a per-era basis
+def neutralize(df,
+               columns,
+               extra_neutralizers=None,
+               proportion=1.0,
+               normalize=True,
+               era_col="era"):
+    # need to do this for lint to be happy bc [] is a "dangerous argument"
+    if extra_neutralizers is None:
+        extra_neutralizers = []
+    unique_eras = df[era_col].unique()
+    computed = []
+    for u in unique_eras:
+        print(u, end="\r")
+        df_era = df[df[era_col] == u]
+        scores = df_era[columns].values
+        if normalize:
+            scores2 = []
+            for x in scores.T:
+                x = (pd.Series(x).rank(method="first").values - .5) / len(x)
+                scores2.append(x)
+            scores = np.array(scores2).T
+            extra = df_era[extra_neutralizers].values
+            exposures = np.concatenate([extra], axis=1)
+        else:
+            exposures = df_era[extra_neutralizers].values
 
-    # constant column to make sure the series is completely neutral to exposures
-    exposures = np.hstack(
-        (exposures,
-         np.asarray(np.mean(scores)) * np.ones(len(exposures)).reshape(-1, 1)))
+        scores -= proportion * exposures.dot(
+            np.linalg.pinv(exposures.astype(np.float32)).dot(scores.astype(np.float32)))
 
-    scores = scores - proportion * exposures.dot(
-        np.linalg.pinv(exposures).dot(scores))
-    return scores / scores.std()
+        scores /= scores.std()
+
+        computed.append(scores)
+
+    return pd.DataFrame(np.concatenate(computed),
+                        columns=columns,
+                        index=df.index)
 
 
 # to neutralize any series by any other series
