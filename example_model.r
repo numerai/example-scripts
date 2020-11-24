@@ -56,14 +56,14 @@ head(names(train),20)
 
 #the target variable has 5 ordinal outcomes (0,0.25,0.5,0.75,1)
 #we train a model on the features to predict this target
-summary(train$target_kazutsugi)
+summary(train$target)
 
 #on this dataset, feature importance analysis is very important
 #we build a random forest to understand which features tend to improve the model out of bag
 #because stocks within eras are not independent, we use small bag sizes (sampsize=10%) so the out of bag estimate is meaningful
 #we use a small subset of features for each tree to build a more feature balanced forest (mtry=10%)
 set.seed(10)
-forest<-randomForest(target_kazutsugi~., data=train, ntree=50, mtry=ceiling(0.1*ncol(train)-1), sampsize=ceiling(0.1*nrow(train)), importance=T, maxnodes=5)
+forest<-randomForest(target~., data=train, ntree=50, mtry=ceiling(0.1*ncol(train)-1), sampsize=ceiling(0.1*nrow(train)), importance=T, maxnodes=5)
 #a good model might drop the bad features according to the forest before training a final model
 #if a feature group or feature is too good, it might also be a good idea to drop to improve the feature balance and improve consistency of the model
 imp<-importance(forest)
@@ -77,17 +77,17 @@ head(imp)
 predictions<-predict(forest, validation)
 head(predictions)
 #Numerai measures performance based on Rank Correlation between your predictions and the true targets
-cor(validation$target_kazutsugi, predictions, method="spearman")
+cor(validation$target, predictions, method="spearman")
 val<-validation
 val$prediction<-predictions
 #consistency is the fraction of months where the model achieves better correlation with the targets than the benchmark
-consistency(val, "target_kazutsugi")
+consistency(val, "target")
 
 #we try a gbm model; we also choose a low bag fraction of 10% as a strategy to deal with within-era non-independence (which is a property of this data)
 #(if you take a sample from one era and a different sample from the same era that sample is not really out of sample because the observations occured in the same era)
 #having small bags also improves the out of bag estimate for the optimal number of trees
 set.seed(10)
-model<-gbm(target_kazutsugi~., data=train, n.trees=50, shrinkage=0.01, interaction.depth=5, train.fraction=1, bag.fraction=0.1, verbose=T)
+model<-gbm(target~., data=train, n.trees=50, shrinkage=0.01, interaction.depth=5, train.fraction=1, bag.fraction=0.1, verbose=T)
 #looking at the relative importance of the features we can see the model relies more on some features than others
 head(summary(model))
 best.iter <- gbm.perf(model, method="OOB")
@@ -96,10 +96,10 @@ best.iter
 #we check performance of the gbm model on the out of sample validation data
 predictions<-predict.gbm(model, validation, n.trees=best.iter, type="response")
 head(predictions)
-cor(validation$target_kazutsugi, predictions, method="spearman")
+cor(validation$target, predictions, method="spearman")
 val<-validation
 val$prediction<-predictions
-consistency(val, "target_kazutsugi")
+consistency(val, "target")
 
 #the gbm model and random forest model have the same consistency (number of eras where correlation > benchmark) even though correlation are different
 #improving consistency can be more important than improving standard machine learning metrics like RMSE
@@ -122,21 +122,21 @@ second_half<-train[!(train$id%in%first_half$id),]
 
 #we remove id, era, data_type column and train a gbm model on the first half of the data
 set.seed(10)
-model<-gbm(target_kazutsugi~., data=first_half[,-c(1:3)], n.trees=100, shrinkage=0.01, interaction.depth=5, train.fraction=1, bag.fraction=0.1, verbose=T)
+model<-gbm(target~., data=first_half[,-c(1:3)], n.trees=100, shrinkage=0.01, interaction.depth=5, train.fraction=1, bag.fraction=0.1, verbose=T)
 best.iter <- gbm.perf(model, method="OOB")
 best.iter
 
 predictions<-predict.gbm(model, second_half, n.trees=best.iter, type="response")
 #our correlation score is good; what we appeared to learn generalizes well on the second half of the eras
-0.5+cor(second_half$target_kazutsugi, predictions, method="spearman")
+0.5+cor(second_half$target, predictions, method="spearman")
 sec<-second_half
 sec$prediction<-predictions
 #consistency is the fraction of months where the model achieves better correlation with the targets than the benchmark
-consistency(sec, "target_kazutsugi")
+consistency(sec, "target")
 
 #but now we try build a model on the second half of the eras and predict on the first half
 set.seed(10)
-model<-gbm(target_kazutsugi~., data=second_half[,-c(1:3)], n.trees=100, shrinkage=0.01, interaction.depth=5, train.fraction=1, bag.fraction=0.1, verbose=T)
+model<-gbm(target~., data=second_half[,-c(1:3)], n.trees=100, shrinkage=0.01, interaction.depth=5, train.fraction=1, bag.fraction=0.1, verbose=T)
 best.iter <- gbm.perf(model, method="OOB")
 best.iter
 
@@ -146,20 +146,20 @@ predictions<-predict.gbm(model, first_half, n.trees=best.iter, type="response")
 #it also shows that our validation performance is likely to greatly overestimate our performance--this era-wise cross validation is more valuable
 #a model whose performance when training on the first half is the same as training on the second half would likely be more consistent
 #and would likely perform better on the tournament data and the live data
-cor(first_half$target_kazutsugi, predictions, method="spearman")
+cor(first_half$target, predictions, method="spearman")
 fir<-first_half
 fir$prediction<-predictions
 #consistency is the fraction of months where the model achieves better correlation with the targets than the benchmark
-consistency(fir, "target_kazutsugi")
+consistency(fir, "target")
 
 #Numerai only pays models with correlations that beat the benchmark on the live portion of the tournament data
 #to submit predictions from your model to Numerai, predict on the entire tournament data
 #we choose use our original forest model for our final submission
-tournament$prediction_kazutsugi<-predict(forest, tournament)
+tournament$prediction<-predict(forest, tournament)
 
 #create your submission
-submission<-subset(tournament, select=c(id, prediction_kazutsugi))
+submission<-subset(tournament, select=c(id, prediction))
 head(submission)
 
 #save your submission and now upload it to https://numer.ai
-write.csv(submission, file="kazutsugi_submission.csv", row.names=F)
+write.csv(submission, file="submission.csv", row.names=F)
