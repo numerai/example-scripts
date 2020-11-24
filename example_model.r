@@ -10,6 +10,10 @@ library(Metrics)
 library(gbm)
 library(randomForest)
 
+# for automatic download of data and upload of submissions have a look at the package Rnumerai
+# for the latest development release use devtools::install_github("Omni-Analytics-Group/Rnumerai") or pak::pkg_install("Omni-Analytics-Group/Rnumerai")
+# for the CRAN version use install.packages("Rnumerai")
+
 print("THIS SCRIPT DOWNSAMPLES DATA AND WILL LIKELY UNDERPERFORM THE example_predictions.csv")
 
 #the training data is used to train your model how to predict the targets
