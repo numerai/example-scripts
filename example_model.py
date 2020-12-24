@@ -82,7 +82,7 @@ def main():
 
     # Check the per-era correlations on the training set (in sample)
     train_correlations = training_data.groupby("era").apply(score)
-    print(f"On training the correlation has mean {train_correlations.mean()} and std {train_correlations.std()}")
+    print(f"On training the correlation has mean {train_correlations.mean()} and std {train_correlations.std(ddof=0)}")
     print(f"On training the average per-era payout is {payout(train_correlations).mean()}")
 
     """Validation Metrics"""
@@ -192,7 +192,7 @@ def neutralize(df,
         scores -= proportion * exposures.dot(
             np.linalg.pinv(exposures.astype(np.float32)).dot(scores.astype(np.float32)))
 
-        scores /= scores.std()
+        scores /= scores.std(ddof=0)
 
         computed.append(scores)
 
