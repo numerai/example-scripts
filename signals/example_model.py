@@ -154,6 +154,19 @@ def main():
 
     live_data = full_data.loc[date_string].copy()
     live_data.dropna(subset=feature_names, inplace=True)
+
+    # get data from the day before, for markets that were closed
+    # on the most recent friday
+    last_thursday = last_friday - datetime.timedelta(days=1)
+    thursday_date_string = last_thursday.strftime('%Y-%m-%d')
+    thursday_data = full_data.loc[thursday_date_string]
+    # Only select tickers than aren't already present in live_data
+    thursday_data = thursday_data[~thursday_data.ticker.isin(
+                                  live_data.ticker.values)].copy()
+    thursday_data.dropna(subset=feature_names, inplace=True)
+
+    live_data = pd.concat([live_data, thursday_data])
+
     print(f"Number of live tickers to submit: {len(live_data)}")
     live_data[PREDICTION_NAME] = model.predict(live_data[feature_names])
 
