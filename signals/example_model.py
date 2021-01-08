@@ -151,8 +151,12 @@ def main():
     # choose data as of most recent friday
     last_friday = datetime.now() + relativedelta(weekday=FR(-1))
     date_string = last_friday.strftime('%Y-%m-%d')
-
-    live_data = full_data.loc[date_string].copy()
+    
+    try:
+        live_data = full_data.loc[date_string].copy()
+    except KeyError as e:
+        print(f"No ticker on {e}")
+        live_data = full_data.iloc[:0].copy()
     live_data.dropna(subset=feature_names, inplace=True)
 
     # get data from the day before, for markets that were closed
