@@ -21,6 +21,22 @@
 #include "model.h"
 #include "timer.h"
 
+std::vector<std::string> get_eras(const std::string& filename,
+                                  const std::unordered_set<std::string>& data_types) {
+  std::vector<std::string> eras;
+  csv::CSVReader reader(filename);
+  for (auto& row : reader) {
+    // Filter by data type.
+    if (data_types.find(row[kDataType].get<>()) == data_types.end()) {
+      continue;
+    }
+
+    eras.push_back(row[kEra].get<>());
+  }
+
+  return eras;
+}
+
 std::vector<torch::Tensor> get_features(const std::string& filename,
                                         const std::unordered_set<std::string>& data_types) {
   std::vector<torch::Tensor> features;
@@ -166,26 +182,27 @@ double score(const std::vector<float>& x, const std::vector<float>& y) {
   return pearson(rank_x, y);
 }
 
-void show_metrics(const std::vector<float>& predictions, const std::vector<float> targets) {
+void show_metrics(const std::vector<float>& predictions, const std::vector<float> targets,
+                  const std::vector<std::string>& eras) {
   // Get correlations per era.
   std::vector<double> correlations;
-  correlations.reserve(kRowsPerValidationEra.size());
-  int i = 0;
   std::vector<float> predictions_per_era;
   std::vector<float> targets_per_era;
-  for (const auto& rows : kRowsPerValidationEra) {
-    predictions_per_era.clear();
-    targets_per_era.clear();
 
-    for (int j = 0; j < rows; ++j) {
-      predictions_per_era.push_back(predictions[i + j]);
-      targets_per_era.push_back(targets[i + j]);
+  for (int i = 0; i <= eras.size(); ++i) {
+    // Process the just ended era.
+    if (i == eras.size() || (i > 0 && eras[i] != eras[i - 1])) {
+      const auto correlation = score(predictions_per_era, targets_per_era);
+      correlations.push_back(correlation);
+
+      predictions_per_era.clear();
+      targets_per_era.clear();
     }
 
-    const auto correlation = score(predictions_per_era, targets_per_era);
-    correlations.push_back(correlation);
-
-    i += rows;
+    if (i < eras.size()) {
+      predictions_per_era.push_back(predictions[i]);
+      targets_per_era.push_back(targets[i]);
+    }
   }
 
   // Compute metrics.
@@ -244,6 +261,7 @@ void train(std::shared_ptr<Model> net, NumeraiDataset& numerai_dataset) {
 
 void test(std::shared_ptr<Model> net) {
   Timer timer("Loading validation data");
+  const auto eras = get_eras(kTournamentData, kValidationDataTypes);
   const auto features = get_features(kTournamentData, kValidationDataTypes);
   const auto targets = get_targets(kTournamentData, kValidationDataTypes);
   timer.end();
@@ -257,12 +275,12 @@ void test(std::shared_ptr<Model> net) {
   auto predictions = net->forward(x);
   timer.end();
 
-  std::vector<float> predictions_vector(predictions.data_ptr<float>(),
-                                        predictions.data_ptr<float>() + predictions.numel());
-  std::vector<float> y_vector(y.data_ptr<float>(), y.data_ptr<float>() + y.numel());
+  const std::vector<float> predictions_vector(predictions.data_ptr<float>(),
+                                              predictions.data_ptr<float>() + predictions.numel());
+  const std::vector<float> y_vector(y.data_ptr<float>(), y.data_ptr<float>() + y.numel());
 
   // Show metrics.
   timer = Timer("Calculating correlation");
-  show_metrics(predictions_vector, y_vector);
+  show_metrics(predictions_vector, y_vector, eras);
   timer.end();
 }

@@ -19,6 +19,9 @@ constexpr float kLearningRate = 1e-3;
 // Data type column name.
 const std::string kDataType = "data_type";
 
+// Era column name.
+const std::string kEra = "era";
+
 // Path to save predictions to.
 const std::string kPredictions = "predictions.csv";
 
@@ -27,11 +30,6 @@ const std::string kTrainingData = "../numerai_training_data.csv";
 
 // Path to tournament data.
 const std::string kTournamentData = "../numerai_tournament_data.csv";
-
-// Number of rows per validation era.
-const std::vector<int> kRowsPerValidationEra = {
-    4573, 4658, 4609, 4630, 4698, 4682, 4688, 4636, 4705, 4756, 4814, 4812, 4970, 4981,
-    5006, 4929, 5083, 5090, 5119, 5152, 5161, 5143, 4991, 5114, 5164, 5227, 5197, 5191};
 
 // Tournament data types.
 const std::unordered_set<std::string> kTournamentDataTypes = {"validation", "test", "live"};
