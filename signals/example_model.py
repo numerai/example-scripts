@@ -43,6 +43,10 @@ def main():
     ticker_map = pd.read_csv(
         'https://numerai-signals-public-data.s3-us-west-2.amazonaws.com/signals_ticker_map_w_bbg.csv'
     )
+    # some yahoo tickers contain '/.' causing a parse error in the yahoo request
+    ticker_map['yahoo'] = ticker_map['yahoo'].str.replace('/.', '.', regex=False)
+    ticker_map.loc[ticker_map['yahoo'] == 'BT/A.L', 'yahoo'] = 'BT-A.L'
+
     print(f"Number of tickers in map: {len(ticker_map)}")
 
     # map eligible numerai tickers to yahoo finance tickers
