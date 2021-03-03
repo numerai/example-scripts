@@ -16569,7 +16569,7 @@ Target column is named <code>target_{tournament name}</code> and is the target t
 <div class="output_subarea output_stream output_stdout output_text">
 <pre>&lt;class 'pandas.core.frame.DataFrame'&gt;
 RangeIndex: 501808 entries, 0 to 501807
-Columns: 314 entries, id to target
+Columns: 314 entries, id to target_kazutsugi
 dtypes: float64(311), object(3)
 memory usage: 1.2+ GB
 </pre>
@@ -16621,7 +16621,7 @@ memory usage: 1.2+ GB
       <th>feature_wisdom44</th>
       <th>feature_wisdom45</th>
       <th>feature_wisdom46</th>
-      <th>target</th>
+      <th>target_kazutsugi</th>
     </tr>
   </thead>
   <tbody>
@@ -17263,7 +17263,7 @@ memory usage: 1.2+ GB
   <thead>
     <tr style="text-align: right;">
       <th></th>
-      <th>target</th>
+      <th>target_kazutsugi</th>
     </tr>
   </thead>
   <tbody>
@@ -17352,7 +17352,7 @@ memory usage: 1.2+ GB
   <thead>
     <tr style="text-align: right;">
       <th></th>
-      <th>target</th>
+      <th>target_kazutsugi</th>
     </tr>
   </thead>
   <tbody>
@@ -17475,7 +17475,7 @@ memory usage: 1.2+ GB
 <div class="output_subarea output_stream output_stdout output_text">
 <pre>&lt;class 'pandas.core.frame.DataFrame'&gt;
 RangeIndex: 501808 entries, 0 to 501807
-Columns: 314 entries, id to target
+Columns: 314 entries, id to target_kazutsugi
 dtypes: float16(311), object(3)
 memory usage: 309.2+ MB
 </pre>
@@ -17530,7 +17530,7 @@ memory usage: 309.2+ MB
 <div class="output_subarea output_stream output_stdout output_text">
 <pre>&lt;class 'pandas.core.frame.DataFrame'&gt;
 RangeIndex: 1676031 entries, 0 to 1676030
-Columns: 314 entries, id to target
+Columns: 314 entries, id to target_kazutsugi
 dtypes: float64(311), object(3)
 memory usage: 3.9+ GB
 </pre>
@@ -17618,7 +17618,7 @@ Name: data_type, dtype: int64</pre>
       <th>feature_wisdom44</th>
       <th>feature_wisdom45</th>
       <th>feature_wisdom46</th>
-      <th>target</th>
+      <th>target_kazutsugi</th>
     </tr>
   </thead>
   <tbody>
@@ -18155,7 +18155,7 @@ Uploading predictions can be done manually on the Numerai website by saving as a
     <div class="input_area">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="c1"># Tournament predictions</span>
 <span class="n">tournament_predictions</span> <span class="o">=</span> <span class="n">reg</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">df_tournament</span><span class="p">[</span><span class="n">features</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">)</span>
-<span class="n">tournament_predictions</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">tournament_predictions</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s1">'prediction'</span><span class="p">])</span>
+<span class="n">tournament_predictions</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">tournament_predictions</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s1">'prediction_kazutsugi'</span><span class="p">])</span>
 
 <span class="c1"># Add the 'id' column</span>
 <span class="n">tournament_predictions</span><span class="p">[</span><span class="s1">'id'</span><span class="p">]</span> <span class="o">=</span> <span class="n">df_tournament</span><span class="p">[</span><span class="s1">'id'</span><span class="p">]</span>
@@ -18199,7 +18199,7 @@ Uploading predictions can be done manually on the Numerai website by saving as a
   <thead>
     <tr style="text-align: right;">
       <th></th>
-      <th>prediction</th>
+      <th>prediction_kazutsugi</th>
       <th>id</th>
     </tr>
   </thead>
