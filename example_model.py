@@ -101,7 +101,7 @@ def main():
     rolling_max = (validation_correlations + 1).cumprod().rolling(window=100,
                                                                   min_periods=1).max()
     daily_value = (validation_correlations + 1).cumprod()
-    max_drawdown = -(rolling_max - daily_value).max()
+    max_drawdown = -((rolling_max - daily_value) / rolling_max).max()
     print(f"max drawdown: {max_drawdown}")
 
     # Check the feature exposure of your validation predictions
