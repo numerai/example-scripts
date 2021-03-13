@@ -62,7 +62,7 @@ def main():
     print("Downloading data...")
     for df in chunk_df:
         try:
-            # set threads = True for faster performance, but tickers will fail, scipt may hang
+            # set threads = True for faster performance, but tickers will fail, script may hang
             # set threads = False for slower performance, but more tickers will succeed
             temp_df = yfinance.download(df.str.cat(sep=' '),
                                         start='2005-12-01',
