@@ -8,7 +8,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
 import requests as re
-from datetime import datetime
+from datetime import datetime, timedelta
 from dateutil.relativedelta import relativedelta, FR
 from sklearn.ensemble import GradientBoostingRegressor
 
@@ -161,7 +161,7 @@ def main():
 
     # get data from the day before, for markets that were closed
     # on the most recent friday
-    last_thursday = last_friday - datetime.timedelta(days=1)
+    last_thursday = last_friday - timedelta(days=1)
     thursday_date_string = last_thursday.strftime('%Y-%m-%d')
     thursday_data = full_data.loc[thursday_date_string]
     # Only select tickers than aren't already present in live_data
