@@ -102,7 +102,6 @@ def download_full_and_load(ticker_map, common_tickers, f_name: str = "full_EOD.z
 
 
 def main():
-    
     # -----Tickers and mapping-----
     napi = numerapi.SignalsAPI()
     eligible_tickers = pd.Series(napi.ticker_universe(), name="bloomberg_ticker")
