@@ -21,28 +21,6 @@ quandl_log.setLevel(logging.DEBUG)
 API_KEY = "<Quandl API KEY>"
 quandl.ApiConfig.api_key = API_KEY
 
-# -----Tickers and mapping-----
-napi = numerapi.SignalsAPI()
-eligible_tickers = pd.Series(napi.ticker_universe(), name="bloomberg_ticker")
-
-ticker_map = pd.read_csv(
-    "https://numerai-signals-public-data.s3-us-west-2.amazonaws.com/signals_ticker_map_w_bbg.csv"
-)
-ticker_map = ticker_map[ticker_map.bloomberg_ticker.isin(eligible_tickers)]
-
-numerai_tickers = ticker_map["bloomberg_ticker"]
-yfinance_tickers = ticker_map["yahoo"]
-
-eod_tickers = pd.read_csv(
-    "https://s3.amazonaws.com/quandl-production-static/end_of_day_us_stocks/ticker_list.csv"
-)
-print(f"Number of eligible tickers : {len(eligible_tickers)}")
-
-common_tickers = np.intersect1d(
-    yfinance_tickers.values.astype(str), eod_tickers["Ticker"].values.astype(str)
-)
-print(f"Number of tickers common between EOD and Bloomberg: {len(common_tickers)}")
-
 # -----Helper functions for feature extraction-----
 def RSI(prices, interval=14):
     """Computes Relative Strength Index given a price series and lookback interval
@@ -63,7 +41,7 @@ def RSI(prices, interval=14):
 
 
 # -----Data loading function-----
-def download_full_and_load(f_name: str = "full_EOD.zip") -> pd.DataFrame:
+def download_full_and_load(ticker_map, common_tickers, f_name: str = "full_EOD.zip") -> pd.DataFrame:
     """Downloads a zip of entire dataset and load csv from it.
     Much faster!
     """
@@ -115,7 +93,7 @@ def download_full_and_load(f_name: str = "full_EOD.zip") -> pd.DataFrame:
     full_data[["open", "close"]] = full_data[["open", "close"]].astype(np.float32)
     full_data = full_data[full_data.ticker.isin(common_tickers)]
     full_data["bloomberg_ticker"] = full_data.ticker.map(
-        dict(zip(ticker_map["yahoo"], numerai_tickers))
+        dict(zip(ticker_map["yahoo"], ticker_map["bloomberg_ticker"]))
     )
     full_data.sort_index(ascending=True, inplace=True)
     gc.collect()
@@ -124,8 +102,31 @@ def download_full_and_load(f_name: str = "full_EOD.zip") -> pd.DataFrame:
 
 
 def main():
+    
+    # -----Tickers and mapping-----
+    napi = numerapi.SignalsAPI()
+    eligible_tickers = pd.Series(napi.ticker_universe(), name="bloomberg_ticker")
+
+    ticker_map = pd.read_csv(
+        "https://numerai-signals-public-data.s3-us-west-2.amazonaws.com/signals_ticker_map_w_bbg.csv"
+    )
+    ticker_map = ticker_map[ticker_map.bloomberg_ticker.isin(eligible_tickers)]
+
+    numerai_tickers = ticker_map["bloomberg_ticker"]
+    yfinance_tickers = ticker_map["yahoo"]
+
+    eod_tickers = pd.read_csv(
+        "https://s3.amazonaws.com/quandl-production-static/end_of_day_us_stocks/ticker_list.csv"
+    )
+    print(f"Number of eligible tickers : {len(eligible_tickers)}")
+
+    common_tickers = np.intersect1d(
+        yfinance_tickers.values.astype(str), eod_tickers["Ticker"].values.astype(str)
+    )
+    print(f"Number of tickers common between EOD and Bloomberg: {len(common_tickers)}")
+
     # downloads the whole dataset as zip and read data (takes around 1.5min)
-    full_data = download_full_and_load(f_name="full_EOD.zip")
+    full_data = download_full_and_load(ticker_map, common_tickers, f_name="full_EOD.zip")
 
     # Building a custom feature
     full_data["day_chg"] = full_data["close"] / full_data["open"] - 1
