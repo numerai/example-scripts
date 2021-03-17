@@ -124,9 +124,7 @@ def download_full_and_load(f_name: str = "full_EOD.zip") -> pd.DataFrame:
 
 
 def main():
-
     # downloads the whole dataset as zip and read data (takes around 1.5min)
-    # Similar to loading data using yfinance in main example_model.py
     full_data = download_full_and_load(f_name="full_EOD.zip")
 
     # Building a custom feature
@@ -193,7 +191,6 @@ def main():
 
     del ticker_groups
     gc.collect()
-    
     print("Calculating changes in lag...")
     # create difference of the lagged features (change in RSI quintile by day)
     for indicator in indicators:
