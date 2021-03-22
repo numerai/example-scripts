@@ -119,7 +119,11 @@ def main():
     PREDICTION_NAME = 'signal'
 
     # read in Signals targets
-    targets = pd.read_csv('historical_targets.csv')
+    try:
+        targets = pd.read_csv('numerai_historical_targets.csv')
+    except FileNotFoundError:
+        napi.download_validation_data()
+        targets = pd.read_csv('numerai_historical_targets.csv')
     targets['date'] = pd.to_datetime(targets['friday_date'], format='%Y%m%d')
 
     # merge our feature data with Numerai targets
@@ -151,7 +155,7 @@ def main():
     # choose data as of most recent friday
     last_friday = datetime.now() + relativedelta(weekday=FR(-1))
     date_string = last_friday.strftime('%Y-%m-%d')
-    
+
     try:
         live_data = full_data.loc[date_string].copy()
     except KeyError as e:
