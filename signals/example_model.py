@@ -120,10 +120,10 @@ def main():
 
     # read in Signals targets
     try:
-        targets = pd.read_csv('numerai_historical_targets.csv')
+        targets = pd.read_csv('numerai_signals_historical.csv')
     except FileNotFoundError:
         napi.download_validation_data()
-        targets = pd.read_csv('numerai_historical_targets.csv')
+        targets = pd.read_csv('numerai_signals_historical.csv')
     targets['date'] = pd.to_datetime(targets['friday_date'], format='%Y%m%d')
 
     # merge our feature data with Numerai targets
