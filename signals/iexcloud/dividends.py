@@ -1,42 +1,45 @@
 import os
 
+import numerapi
+import numpy as np
+import pandas as pd
+from tqdm.auto import tqdm
 from iexfinance import stocks
 from iexfinance.utils.exceptions import IEXQueryError
-import numerapi
-import pandas as pd
-from tqdm import tqdm
 
 
 SANDBOX = True
 
 if SANDBOX:
-    os.environ['IEX_TOKEN'] = os.environ['IEX_TOKEN_SANDBOX']
+    os.environ['IEX_TOKEN'] = 'XXXXXXXXX'
     os.environ['IEX_API_VERSION'] = 'iexcloud-sandbox'
+else:
+    os.environ['IEX_TOKEN'] = 'XXXXXXXXX'
+    os.environ['IEX_API_VERSION'] = 'stable'
 
-try:
-    napi = numerapi.SignalsAPI(
-        public_id=os.environ['NUMERAI_PUBLIC_ID'],
-        secret_key=os.environ['NUMERAI_SECRET_KEY']
-    )
-except:
-    napi = numerapi.SignalsAPI()
+if ('NUMERAI_PUBLIC_ID' not in os.environ) & ('NUMERAI_SECRET_KEY' not in os.environ):
+    os.environ['NUMERAI_PUBLIC_ID'] = 'XXXXXXXXX'
+    os.environ['NUMERAI_SECRET_KEY'] = 'XXXXXXXXX'
 
-map = pd.read_parquet('signals/iexcloud/extended_map_us.parquet')
+napi = numerapi.SignalsAPI()
 
-# TODO: use proper INFO logging instead of print (in line with numerapi's logging)
-print('retrieving dividends data from iex cloud for all mapped symbols...')
+universe = pd.DataFrame({'bloomberg_ticker': napi.ticker_universe()})
+universe[['ticker', 'region']] = universe['bloomberg_ticker'].str.split(' ', n=2, expand=True)
+universe = universe[universe['region'] == 'US']
 
+print("retrieving all known stocks with dividends data in region US...")
 data = []
 not_found = []
-for _, symbol, bloomberg_ticker in tqdm(list(map[['symbol', 'bloomberg_ticker']].itertuples())):
+for _, symbol, bloomberg_ticker in tqdm(list(universe[['ticker', 'bloomberg_ticker']].itertuples())):
     try:
         dividends = stocks.Stock(symbol).get_dividends(range='5y')
         if not dividends.empty:
-            # only continue if dividends data was retrieved
             dividends.index = pd.to_datetime(dividends.index)
+            # TODO: filter out any stocks that used to pay out dividends but do not anymore
             # how often per year are dividends payed out?
-            dividends['frequency'] = dividends['frequency'].map({
+            dividends['frequency_int'] = dividends['frequency'].str.strip().map({
                 'annual': 1,
+                'semi-annual': 2,
                 'quarterly': 4,
                 'monthly': 12,
                 'weekly': 52,
@@ -46,20 +49,22 @@ for _, symbol, bloomberg_ticker in tqdm(list(map[['symbol', 'bloomberg_ticker']]
             # resample both prices and dividends to daily time series
             # last known price/dividends is always assumed best truth, hence ffill
             joined = prices.resample('D').ffill().join(dividends.resample('D').ffill()).ffill()
-            # calculate the daily dividends' apy of the stock
-            joined['div_apy'] = joined['amount'] * joined['frequency'] / joined['close']
+            # calculate the dividend apy of the stock
+            joined['div_apy'] = joined['amount'] * joined['frequency_int'] / joined['close']
 
             joined['bloomberg_ticker'] = bloomberg_ticker
             data.append(joined[['bloomberg_ticker', 'div_apy']])
+            if len(data) > 10:
+                break
     except IEXQueryError:
         not_found.append(symbol)
 full_data = pd.concat(data).sort_index()
 
 if len(not_found) > 0:
-    print(f'could not retrieve following symbols: {not_found}')
+    print(f'could not retrieve the following symbols: {not_found}')
 
-# transform the daily apy to a quintile (so either 0, .25, .5, .75 or 1)
-print(f"converting to quintile signal for {full_data['bloomberg_ticker'].unique().size} symbols...")
+print(f"retrieved usable dividend data for {full_data['bloomberg_ticker'].unique().size} symbols")
+
 full_data['signal'] = (full_data
     .groupby(full_data.index)['div_apy']
     .transform(lambda date: pd.qcut(date, 5, labels=False, duplicates='drop')) / 4
@@ -67,12 +72,12 @@ full_data['signal'] = (full_data
 
 # read in numerai signals' targets
 try:
-    targets = pd.read_csv('historical_targets.csv')
+    targets = pd.read_csv('numerai_signals_historical.csv')
 except FileNotFoundError:
-    napi.download_validation_data(dest_filename='historical_targets.csv')
-    targets = pd.read_csv('historical_targets.csv')
+    napi.download_validation_data()
+    targets = pd.read_csv('numerai_signals_historical.csv')
 targets['friday_date'] = pd.to_datetime(targets['friday_date'], format='%Y%m%d')
-targets = targets.rename({'friday_date': 'date'}, axis=1)
+targets = targets.rename({'friday_date': 'date'}, axis=1).set_index('date')
 
 # covert to time series consisting of only Fridays
 # TODO: compare Friday's signal (asfreq) with other weekly aggregates
@@ -89,21 +94,20 @@ data_for_merge = (full_data
 
 # merge with targets
 print("merging with numerai's targets...")
-preds = pd.merge(data_for_merge, targets, how='left', on=['date', 'bloomberg_ticker'])
+preds = pd.merge(data_for_merge, targets, how='left', on=['date', 'bloomberg_ticker']).set_index('date')
 # define live targets (last known Friday)
 preds.loc[preds.index[-1], 'data_type'] = 'live'
 # drop everything else that could not be merged
-preds[~preds['data_type'].isna()]
+preds = preds[~preds['data_type'].isna()]
 print(f"successfully merged {preds['bloomberg_ticker'].unique().size} symbols")
+
+# a quick look at the mean correlation of the signal with the validation target
+print(f"mean correlation with target: {preds[preds['data_type'] == 'validation'][['signal', 'target']].corr()['target'][0]}")
 
 # build submission, write to file and upload
 submission = (preds
+    .reset_index()
     .rename({'date': 'friday_date'}, axis=1)
     [['bloomberg_ticker', 'friday_date', 'data_type', 'signal']]
 ).to_csv('submission.csv', index=False)
-napi.upload_predictions('submission.csv', model_id=napi.get_models()['gosuto_test'])
-
-# TODO:
-# what is corr of signal with target?
-# is there really a signal or is it neutralised to 0?
-# can same diagostics be performed offline as is done online?
+napi.upload_predictions('submission.csv', model_id=napi.get_models()['XXXXXXXXX'])
