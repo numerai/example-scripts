@@ -1,25 +1,19 @@
 import os
+import time
 
 import numerapi
 import numpy as np
 import pandas as pd
-from tqdm.auto import tqdm
 from iexfinance import stocks
 from iexfinance.utils.exceptions import IEXQueryError
+from tqdm.auto import tqdm
 
 
 SANDBOX = True
-
-if SANDBOX:
-    os.environ['IEX_TOKEN'] = 'XXXXXXXXX'
-    os.environ['IEX_API_VERSION'] = 'iexcloud-sandbox'
-else:
-    os.environ['IEX_TOKEN'] = 'XXXXXXXXX'
-    os.environ['IEX_API_VERSION'] = 'stable'
-
-if ('NUMERAI_PUBLIC_ID' not in os.environ) & ('NUMERAI_SECRET_KEY' not in os.environ):
-    os.environ['NUMERAI_PUBLIC_ID'] = 'XXXXXXXXX'
-    os.environ['NUMERAI_SECRET_KEY'] = 'XXXXXXXXX'
+os.environ['IEX_TOKEN'] = 'XXXXXXXXX' if SANDBOX else 'XXXXXXXXX'
+os.environ['IEX_API_VERSION'] = 'iexcloud-sandbox' if SANDBOX else 'stable'
+os.environ['NUMERAI_PUBLIC_ID'] = 'XXXXXXXXX'
+os.environ['NUMERAI_SECRET_KEY'] = 'XXXXXXXXX'
 
 napi = numerapi.SignalsAPI()
 
@@ -27,12 +21,23 @@ universe = pd.DataFrame({'bloomberg_ticker': napi.ticker_universe()})
 universe[['ticker', 'region']] = universe['bloomberg_ticker'].str.split(' ', n=2, expand=True)
 universe = universe[universe['region'] == 'US']
 
+def get_stock_dividends(symbol, range='5y'):
+    try:
+        dividends = stocks.Stock(symbol).get_dividends(range=range)
+    except ConnectionError as e:
+        print(e)
+        print('retrying after 30 seconds...')
+        time.sleep(31)
+        get_stock_dividends(symbol, range)
+    return dividends
+
+
 print("retrieving all known stocks with dividends data in region US...")
 data = []
 not_found = []
 for _, symbol, bloomberg_ticker in tqdm(list(universe[['ticker', 'bloomberg_ticker']].itertuples())):
     try:
-        dividends = stocks.Stock(symbol).get_dividends(range='5y')
+        dividends = get_stock_dividends(symbol)
         if not dividends.empty:
             dividends.index = pd.to_datetime(dividends.index)
             # TODO: filter out any stocks that used to pay out dividends but do not anymore
