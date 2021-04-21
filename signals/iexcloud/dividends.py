@@ -68,7 +68,7 @@ full_data = pd.concat(data).sort_index()
 if len(not_found) > 0:
     print(f'could not retrieve the following symbols: {not_found}')
 
-print(f"retrieved usable dividend data for {full_data['bloomberg_ticker'].unique().size} symbols")
+print(f"retrieved usable dividend data for {full_data['bloomberg_ticker'].nunique()} symbols")
 
 full_data['signal'] = (full_data
     .groupby(full_data.index)['div_apy']
