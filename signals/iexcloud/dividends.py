@@ -14,6 +14,7 @@ os.environ['IEX_TOKEN'] = 'XXXXXXXXX' if SANDBOX else 'XXXXXXXXX'
 os.environ['IEX_API_VERSION'] = 'iexcloud-sandbox' if SANDBOX else 'stable'
 os.environ['NUMERAI_PUBLIC_ID'] = 'XXXXXXXXX'
 os.environ['NUMERAI_SECRET_KEY'] = 'XXXXXXXXX'
+MODEL_NAME = 'XXXXXXXXX'
 
 napi = numerapi.SignalsAPI()
 
