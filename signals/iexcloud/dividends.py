@@ -115,4 +115,4 @@ submission = (preds
     .rename({'date': 'friday_date'}, axis=1)
     [['bloomberg_ticker', 'friday_date', 'data_type', 'signal']]
 ).to_csv('submission.csv', index=False)
-napi.upload_predictions('submission.csv', model_id=napi.get_models()['XXXXXXXXX'])
+napi.upload_predictions('submission.csv', model_id=napi.get_models()[MODEL_NAME])
