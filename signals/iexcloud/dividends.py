@@ -14,7 +14,9 @@ os.environ['IEX_TOKEN'] = 'XXXXXXXXX' if SANDBOX else 'XXXXXXXXX'
 os.environ['IEX_API_VERSION'] = 'iexcloud-sandbox' if SANDBOX else 'stable'
 os.environ['NUMERAI_PUBLIC_ID'] = 'XXXXXXXXX'
 os.environ['NUMERAI_SECRET_KEY'] = 'XXXXXXXXX'
-MODEL_NAME = 'XXXXXXXXX'
+
+# replace with your own Numerai Signals model name
+MODEL_NAME = 'gosuto_test'
 
 napi = numerapi.SignalsAPI()
 
@@ -22,7 +24,7 @@ universe = pd.DataFrame({'bloomberg_ticker': napi.ticker_universe()})
 universe[['ticker', 'region']] = universe['bloomberg_ticker'].str.split(' ', n=2, expand=True)
 universe = universe[universe['region'] == 'US']
 
-def get_stock_dividends(symbol, range='5y'):
+def get_stock_dividends(symbol, range):
     try:
         dividends = stocks.Stock(symbol).get_dividends(range=range)
     except ConnectionError as e:
@@ -38,7 +40,8 @@ data = []
 not_found = []
 for _, symbol, bloomberg_ticker in tqdm(list(universe[['ticker', 'bloomberg_ticker']].itertuples())):
     try:
-        dividends = get_stock_dividends(symbol)
+        # use a range of up to 5y for extended backtesting of the validation set
+        dividends = get_stock_dividends(symbol, range='1y')
         if not dividends.empty:
             dividends.index = pd.to_datetime(dividends.index)
             # TODO: filter out any stocks that used to pay out dividends but do not anymore
@@ -60,8 +63,6 @@ for _, symbol, bloomberg_ticker in tqdm(list(universe[['ticker', 'bloomberg_tick
 
             joined['bloomberg_ticker'] = bloomberg_ticker
             data.append(joined[['bloomberg_ticker', 'div_apy']])
-            if len(data) > 10:
-                break
     except IEXQueryError:
         not_found.append(symbol)
 full_data = pd.concat(data).sort_index()
