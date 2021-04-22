@@ -87,7 +87,6 @@ targets['friday_date'] = pd.to_datetime(targets['friday_date'], format='%Y%m%d')
 targets = targets.rename({'friday_date': 'date'}, axis=1).set_index('date')
 
 # covert to time series consisting of only Fridays
-# TODO: compare Friday's signal (asfreq) with other weekly aggregates
 data_for_merge = (full_data
     .groupby('bloomberg_ticker')
     .apply(lambda x: x.asfreq('W-FRI'))
