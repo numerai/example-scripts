@@ -44,7 +44,7 @@ for _, symbol, bloomberg_ticker in tqdm(list(universe[['ticker', 'bloomberg_tick
         dividends = get_stock_dividends(symbol, range='1y')
         if not dividends.empty:
             dividends.index = pd.to_datetime(dividends.index)
-            # TODO: filter out any stocks that used to pay out dividends but do not anymore
+            # NOTE: Stocks that used to payout dividends but do not anymore are not filtered out
             # how often per year are dividends payed out?
             dividends['frequency_int'] = dividends['frequency'].str.strip().map({
                 'annual': 1,
