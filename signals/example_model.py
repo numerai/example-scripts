@@ -36,19 +36,19 @@ def main():
     napi = numerapi.SignalsAPI()
 
     # read in list of active Signals tickers which can change slightly era to era
-    eligible_tickers = pd.Series(napi.ticker_universe(), name='bloomberg_ticker')
+    eligible_tickers = pd.Series(napi.ticker_universe(), name='ticker')
     print(f"Number of eligible tickers: {len(eligible_tickers)}")
 
-    # read in yahoo to bloomberg ticker map, still a work in progress, h/t wsouza
+    # read in yahoo to numerai ticker map, still a work in progress, h/t wsouza
     ticker_map = pd.read_csv(
-        'https://numerai-signals-public-data.s3-us-west-2.amazonaws.com/signals_ticker_map_w_bbg.csv'
+        'https://numerai-signals-public-data.s3-us-west-2.amazonaws.com/signals_ticker_map.csv'
     )
     print(f"Number of tickers in map: {len(ticker_map)}")
 
     # map eligible numerai tickers to yahoo finance tickers
     yfinance_tickers = eligible_tickers.map(
-        dict(zip(ticker_map['bloomberg_ticker'], ticker_map['yahoo']))).dropna()
-    bloomberg_tickers = ticker_map['bloomberg_ticker']
+        dict(zip(ticker_map['ticker'], ticker_map['yahoo']))).dropna()
+    numerai_tickers = ticker_map['ticker']
     print(f'Number of eligible, mapped tickers: {len(yfinance_tickers)}')
 
     # download data
@@ -78,10 +78,10 @@ def main():
     full_data.columns = ['date', 'ticker', 'price']
     full_data.set_index('date', inplace=True)
     # convert yahoo finance tickers back to numerai tickers
-    full_data['bloomberg_ticker'] = full_data.ticker.map(
-        dict(zip(ticker_map['yahoo'], bloomberg_tickers)))
+    full_data['ticker'] = full_data.ticker.map(
+        dict(zip(ticker_map['yahoo'], numerai_tickers)))
     print('Data downloaded.')
-    print(f"Number of tickers with data: {len(full_data.bloomberg_ticker.unique())}")
+    print(f"Number of tickers with data: {len(full_data.ticker.unique())}")
 
     ticker_groups = full_data.groupby('ticker')
     full_data['RSI'] = ticker_groups['price'].transform(lambda x: RSI(x))
@@ -128,7 +128,7 @@ def main():
 
     # merge our feature data with Numerai targets
     ML_data = pd.merge(full_data.reset_index(), targets,
-                       on=['date', 'bloomberg_ticker']).set_index('date')
+                       on=['date', 'ticker']).set_index('date')
     # print(f'Number of eras in data: {len(ML_data.index.unique())}')
 
     # for training and testing we want clean, complete data only
@@ -183,7 +183,7 @@ def main():
     diagnostic_df['friday_date'] = diagnostic_df.friday_date.fillna(
         last_friday.strftime('%Y%m%d')).astype(int)
     diagnostic_df['data_type'] = diagnostic_df.data_type.fillna('live')
-    diagnostic_df[['bloomberg_ticker', 'friday_date', 'data_type',
+    diagnostic_df[['ticker', 'friday_date', 'data_type',
                    'signal']].reset_index(drop=True).to_csv(
         'example_signal_upload.csv', index=False)
     print(
