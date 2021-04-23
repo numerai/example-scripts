@@ -1,6 +1,13 @@
-Decided to give Signals a try and follow the current De-Fi hype... APY APY APY. So the idea is very simple: what is the annual percentage yield for a stock, based on its price and dividends?
+Let's follow the current De-Fi hype... APY APY APY. The idea is very simple: what is the annual percentage yield for a stock, based on its price and dividends?
 
-I found a nice endpoint on IEX Cloud's API: [https://iexcloud.io/docs/api/#dividends-basic](https://iexcloud.io/docs/api/#dividends-basic). The fields `amount` and `frequency`, combined with the daily price, being all we need.
+**Before running, install the python packages for iexfinance and numerapi:** `pip install iexfinance numerapi`
+
+Additionally, IEX_TOKEN, NUMERAI_PUBLIC_ID, and NUMERAI_SECRET_KEY need to be set on lines 13-16.
+
+To get an "IEX_TOKEN", create an account on [IEX Cloud](https://iexcloud.io/). Make sure you switch the toggle to "sandbox" before copying the token.
+
+## Details
+There's a nice endpoint on IEX Cloud's API: [https://iexcloud.io/docs/api/#dividends-basic](https://iexcloud.io/docs/api/#dividends-basic). The fields `amount` and `frequency`, combined with the daily price, being all we need.
 
 IEX Cloud is free-ish, meaning there is a free account but it's limited in endpoints and calls per month. However, they also provide a sandbox mode which you can call as much as you want. Some data in sandbox mode is obfuscated but not all. Also, a subscription for $9/month (~0.15NMR?!) is not the end of the world.
 
