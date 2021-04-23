@@ -40,7 +40,7 @@ data = []
 not_found = []
 for _, symbol, bloomberg_ticker in tqdm(list(universe[['ticker', 'bloomberg_ticker']].itertuples())):
     try:
-        # use a range of up to 5y for extended backtesting of the validation set
+        # use a range of up to 1y for extended backtesting of the validation set
         dividends = get_stock_dividends(symbol, range='1y')
         if not dividends.empty:
             dividends.index = pd.to_datetime(dividends.index)
