@@ -47,8 +47,8 @@ def main():
 
     # map eligible numerai tickers to yahoo finance tickers
     yfinance_tickers = eligible_tickers.map(
-        dict(zip(ticker_map['numerai_ticker'], ticker_map['yahoo']))).dropna()
-    numerai_tickers = ticker_map['numerai_ticker']
+        dict(zip(ticker_map['bloomberg_ticker'], ticker_map['yahoo']))).dropna()
+    numerai_tickers = ticker_map['bloomberg_ticker']
     print(f'Number of eligible, mapped tickers: {len(yfinance_tickers)}')
 
     # download data
@@ -125,6 +125,8 @@ def main():
         napi.download_validation_data()
         targets = pd.read_csv('numerai_historical_targets.csv')
     targets['date'] = pd.to_datetime(targets['friday_date'], format='%Y%m%d')
+
+    targets.rename(columns={"bloomberg_ticker": "numerai_ticker"}, inplace=True)
 
     # merge our feature data with Numerai targets
     ML_data = pd.merge(full_data.reset_index(), targets,
