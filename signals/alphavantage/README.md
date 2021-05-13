@@ -31,3 +31,5 @@ Since the API has a rate limit of calls per minute, this script provides two fun
 - Since Alpha vantage has different types of data resolutions, this script uses **weekly data** (OHLC) to generate features.
 - Some features are `simple moveing average` and `exponential moving average` of periods `[2, 5, 21, 50, 200]`.
 
+
+![Diagnostics](https://raw.githubusercontent.com/parmarsuraj99/numerai-guides/master/images/signals_alphavantage_diagnostics.png)
