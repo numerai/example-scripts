@@ -6,13 +6,13 @@ pip install numerapi tqdm
 
 `key = "<ALPHAVANTAGE API KEY>"` **this needs to be set before running the script.**
 
-You can generate a premium key by subscribing to [premium membership](https://www.alphavantage.co/premium/). This script was created with the lowest 75 calls/minute plan so it would work. This takes around 13 mins to load all US stocks.
+AlphaVantage has a free key with a limit of 5 API calls per minute. For a limit of 75 calls per minute, you can pay $50 USD per month for a [premium key](https://www.alphavantage.co/premium/). This script was created for use with the 75 calls per minute plan so it would work. This takes around 13 mins to load all US stocks.
 
-Alpha Vantage offers various typed of data including Stocks, cryptocurrencies, and technical indicators. [Documentation](https://www.alphavantage.co/documentation/).
+Alpha Vantage offers various types of data including stocks, cryptocurrencies, and technical indicators. [Documentation](https://www.alphavantage.co/documentation/).
 
 ### Data Loading
 
-Since the API has some rate limits of fixed calls/minute, this script provides two functions for loading the data.
+Since the API has a rate limit of calls per minute, this script provides two functions for loading the data.
 
 - Sequential 
     + This may take over an hour to load all available tickers.
@@ -28,7 +28,6 @@ Since the API has some rate limits of fixed calls/minute, this script provides t
 
 ### Feature Generation
 
-- Since Alpha vantage has differnet types of data resolutions, this script uses **weekly data** (OHLC) to generate features.
+- Since Alpha vantage has different types of data resolutions, this script uses **weekly data** (OHLC) to generate features.
 - Some features are `simple moveing average` and `exponential moving average` of periods `[2, 5, 21, 50, 200]`.
-
 

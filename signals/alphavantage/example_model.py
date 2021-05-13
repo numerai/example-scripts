@@ -18,7 +18,7 @@ from tqdm.auto import tqdm
 
 #https://www.alphavantage.co/premium/
 
-key = "<ALPHAVANTAGE API KEY>"  #75calls/minute subscription would work
+key = "<ALPHAVANTAGE API KEY>"  # $50 USD, 75 calls per minute subscription will work
 BASE_URL = "https://www.alphavantage.co/query"
 
 TARGET_NAME = "target"
@@ -59,18 +59,16 @@ def get_tickers_sequential(tickers) -> pd.DataFrame:
 
 
 def get_tickers_parallel(tickers) -> pd.DataFrame:
-
     n = 70  # Setting n<75 for extra safety
     chunks = [tickers[i : i + n] for i in range(0, len(tickers), n)]
 
     res = []
     pbar = tqdm(total=len(tickers))
     with _futures.ThreadPoolExecutor() as executor:
-        for chunk in chunks:    
+        for chunk in chunks:
             futures = []
             for i, ticker in enumerate(chunk):
                 futures.append(executor.submit(get_daily_ts_adj, ticker=ticker))
-            
             for future in _futures.as_completed(futures):
                 try:
                     response = future.result()
@@ -90,7 +88,6 @@ def get_tickers_parallel(tickers) -> pd.DataFrame:
 
 
 def load_data(tickers, f_path="full_data.csv", threads=False) -> pd.DataFrame:
-
     if os.path.exists(f_path):
         data = pd.read_csv(f_path)
         data = data.loc[data.ticker.isin(tickers)]
@@ -106,11 +103,9 @@ def load_data(tickers, f_path="full_data.csv", threads=False) -> pd.DataFrame:
     data.index = pd.to_datetime(data.index)
 
     return data
-    
 
 def generate_featues(full_data: pd.DataFrame) -> pd.DataFrame:
     ticker_groups = full_data.groupby("bloomberg_ticker")
-    
     indicators = []
     sma_periods = [2, 5, 21, 50, 200]
     ema_periods = [2, 5, 21, 50, 200]
@@ -187,7 +182,7 @@ def main():
     targets["date"] = pd.to_datetime(targets["friday_date"], format="%Y%m%d")
     gc.collect()
 
-    # ----- generate and select features -----
+    # ----- Generate and select features -----
     full_data = generate_featues(full_data)
     feature_names = [f for f in full_data.columns if "quintile" in f]
 
@@ -199,7 +194,7 @@ def main():
     ML_data = ML_data[ML_data.index.weekday == 4]
     ML_data = ML_data[ML_data.index.value_counts() > 200]
 
-    # ----- train test split -----
+    # ----- Train test split -----
     train_data = ML_data[ML_data["data_type"] == "train"]
     test_data = ML_data[ML_data["data_type"] == "validation"]
 
@@ -220,14 +215,13 @@ def main():
         live_data = full_data.iloc[:0].copy()
     live_data.dropna(subset=feature_names, inplace=True)
     print(len(live_data))
-    
-    # ----- train model -----
+    # ----- Train model -----
     print("Training model...")
     model = GradientBoostingRegressor()
     model.fit(train_data[feature_names], train_data[TARGET_NAME])
     print("Model trained.")
 
-    # predict test data
+    # ----- Predict test data -----
     train_data[PREDICTION_NAME] = model.predict(train_data[feature_names])
     test_data[PREDICTION_NAME] = model.predict(test_data[feature_names])
     live_data[PREDICTION_NAME] = model.predict(live_data[feature_names])
@@ -241,7 +235,7 @@ def main():
         ["bloomberg_ticker", "friday_date", "data_type", "signal"]
     ].reset_index(drop=True).to_csv("example_signal_alphavantage.csv", index=False)
     print(
-        "Example submission completed. Upload to signals.numer.ai for scores and live submission"
+        "Submission saved to example_signal_alphavantage.csv. Upload to signals.numer.ai for scores and diagnostics"
     )
 
 
