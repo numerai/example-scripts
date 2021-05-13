@@ -120,10 +120,10 @@ def main():
 
     # read in Signals targets
     try:
-        targets = pd.read_csv('numerai_historical_targets.csv')
+        targets = pd.read_csv('historical_targets.csv')
     except FileNotFoundError:
-        napi.download_validation_data()
-        targets = pd.read_csv('numerai_historical_targets.csv')
+        napi.download_validation_data(dest_filename='historical_targets.csv')
+        targets = pd.read_csv('historical_targets.csv')
     targets['date'] = pd.to_datetime(targets['friday_date'], format='%Y%m%d')
 
     targets.rename(columns={"bloomberg_ticker": "numerai_ticker"}, inplace=True)
