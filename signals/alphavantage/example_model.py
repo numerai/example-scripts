@@ -21,6 +21,8 @@ from tqdm.auto import tqdm
 key = "<ALPHAVANTAGE API KEY>"  # $50 USD, 75 calls per minute subscription will work
 BASE_URL = "https://www.alphavantage.co/query"
 
+LOAD_DATA_IN_PARALLEL = True
+
 TARGET_NAME = "target"
 PREDICTION_NAME = "signal"
 
@@ -163,7 +165,7 @@ def main():
 
     # ----- Raw data loading and formatting -----
     print(f"using tickers: {len(tickers)}")
-    full_data = load_data(tickers, "full_data.csv", threads=True)
+    full_data = load_data(tickers, "full_data.csv", threads=LOAD_DATA_IN_PARALLEL)
 
     full_data["bloomberg_ticker"] = full_data.ticker.map(
         dict(zip(ticker_map["yahoo"], bloomberg_tickers))
