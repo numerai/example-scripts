@@ -175,7 +175,7 @@ def main():
     gc.collect()
 
     # -----Feature engineering: Quintile lag-----
-    ticker_groups = full_data.groupby("ticker")
+    ticker_groups = full_data.groupby("bloomberg_ticker")
     # create lagged features, lag 0 is that day's value, lag 1 is yesterday's value, etc
     print("Calculating lag...")
     for indicator in indicators:
@@ -249,7 +249,7 @@ def main():
     thursday_data = full_data.loc[thursday_date_string]
     # Only select tickers than aren't already present in live_data
     thursday_data = thursday_data[
-        ~thursday_data.ticker.isin(live_data.ticker.values)
+        ~thursday_data.bloomberg_ticker.isin(live_data.bloomberg_ticker.values)
     ].copy()
     thursday_data.dropna(subset=feature_names, inplace=True)
 
