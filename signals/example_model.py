@@ -1,6 +1,4 @@
 import numerapi
-# a fork of yfinance that implements retries nicely
-# pip install -e git+http://github.com/leonhma/yfinance.git@master#egg=yfinance
 import yfinance
 import simplejson
 
