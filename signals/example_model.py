@@ -113,7 +113,7 @@ def main():
     ] + [f'RSI_abs_diff_{num}' for num in range(num_days)]
     print(f'Features for training:\n {feature_names}')
 
-    TARGET_NAME = 'target'
+    TARGET_NAME = 'target_20d'
     PREDICTION_NAME = 'signal'
 
     # read in Signals targets
