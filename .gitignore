@@ -90,3 +90,6 @@ ENV/
 
 # Data
 *.csv
+
+.idea
+example_model.xgb

@@ -10,6 +10,7 @@ from pathlib import Path
 import pandas as pd
 import numpy as np
 from xgboost import XGBRegressor
+from halo import Halo
 
 TARGET_NAME = f"target"
 PREDICTION_NAME = f"prediction"
@@ -52,11 +53,14 @@ def read_csv(file_path):
 
 
 def main():
-    print("Loading data...")
+
     # The training data is used to train your model how to predict the targets.
-    training_data = read_csv("numerai_training_data.csv")
+    with Halo(text='Loading training data', spinner='dots'):
+        training_data = read_csv("numerai_training_data.csv")
+
     # The tournament data is the data that Numerai uses to evaluate your model.
-    tournament_data = read_csv("numerai_tournament_data.csv")
+    with Halo(text='Loading tournament data', spinner='dots'):
+        tournament_data = read_csv("numerai_tournament_data.csv")
 
     feature_names = [
         f for f in training_data.columns if f.startswith("feature")
@@ -71,27 +75,27 @@ def main():
         print("Loading pre-trained model...")
         model.load_model(MODEL_FILE)
     else:
-        print("Training model...")
-        model.fit(training_data[feature_names], training_data[TARGET_NAME])
-        model.save_model(MODEL_FILE)
+        with Halo(text='Training model', spinner='dots'):
+            model.fit(training_data[feature_names], training_data[TARGET_NAME])
+            model.save_model(MODEL_FILE)
 
     # Generate predictions on both training and tournament data
-    print("Generating predictions...")
-    try:
-        training_data[PREDICTION_NAME] = model.predict(training_data[feature_names])
-        tournament_data[PREDICTION_NAME] = model.predict(tournament_data[feature_names])
-    except Exception as e:
-        print(e)
-        print("If you received the error 'Floating point is not supported', this is likely due to using version >=1.4 of XGBoost")
-        print("Downgrade to XGBoost 1.3.3 by typing the following into your command line")
-        print("pip install xgboost==1.3.3")
-        print("\nAlternatively, change the lines that start with")
-        print("training_data =...")
-        print("tournament_data =...")
-        print("\nTo the following")
-        print("training_data = pd.read_parquet(\"s3://numerai-public-datasets/latest_numerai_training_data.parquet\")")
-        print("training_data = pd.read_parquet(\"s3://numerai-public-datasets/latest_numerai_tournament_data.parquet\")")
-        print("\nThis will require more RAM")
+    with Halo(text='Generating predictions', spinner='dots'):
+        try:
+            training_data[PREDICTION_NAME] = model.predict(training_data[feature_names])
+            tournament_data[PREDICTION_NAME] = model.predict(tournament_data[feature_names])
+        except Exception as e:
+            print(e)
+            print("If you received the error 'Floating point is not supported', this is likely due to using version >=1.4 of XGBoost")
+            print("Downgrade to XGBoost 1.3.3 by typing the following into your command line")
+            print("pip install xgboost==1.3.3")
+            print("\nAlternatively, change the lines that start with")
+            print("training_data =...")
+            print("tournament_data =...")
+            print("\nTo the following")
+            print("training_data = pd.read_parquet(\"s3://numerai-public-datasets/latest_numerai_training_data.parquet\")")
+            print("training_data = pd.read_parquet(\"s3://numerai-public-datasets/latest_numerai_tournament_data.parquet\")")
+            print("\nThis will require more RAM")
 
     # Check the per-era correlations on the training set (in sample)
     train_correlations = training_data.groupby("era").apply(score)
