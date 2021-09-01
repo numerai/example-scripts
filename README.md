@@ -39,6 +39,8 @@ numerai-example-model
 
 The example script model will produce a `submission.csv` file which you can then submit at https://numer.ai/tournament.
 
+![upload-predictions](https://github.com/numerai/example-scripts/blob/chris/update-example-scripts/media/upload_predictions.gif)
+
 Please note that submissions are only accepted when a new round is open (Saturday 16:00 UTC through Monday 16:00 UTC). You will
 not be able to submit predictions outside this window. However, you can still get diagnostics by submitting
 validation predictions with our diagnostic tool: https://numer.ai/models
