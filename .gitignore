@@ -90,6 +90,7 @@ ENV/
 
 # Data
 *.csv
+*.parquet
 
 .idea
 example_model.xgb
