@@ -91,7 +91,7 @@ file at https://numer.ai/tournament
 
 - Description: Unlabeled feature data used to generate predictions and for computing live tournament scores
 
-- Dimensions: ~1.4M rows x 1K columns
+- Dimensions: ~1.4M rows x ~1K columns
 
 - Size: ~6GB CSV, ~550MB Parquet
 
