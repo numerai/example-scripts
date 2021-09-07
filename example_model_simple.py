@@ -46,9 +46,6 @@ feature_cols = [c for c in training_data if c.startswith("feature_")]
 
 gc.collect()
 
-# it's nice to store models in a dict in case we ever want to have multiple models to ensemble together
-models = {}
-
 model_name = f"model_target"
 print(f"predicting {model_name}")
 model = load_model(model_name)
@@ -67,7 +64,6 @@ if not model:
         model.fit(training_data.loc[:, feature_cols], training_data[TARGET_COL])
         print(f"saving new model: {model_name}")
         save_model(model, model_name)
-        models[model_name] = model
 
 # check for nans and fill nans
 if tournament_data.loc[tournament_data["data_type"] == "live", feature_cols].isna().sum().sum():
@@ -80,21 +76,16 @@ if tournament_data.loc[tournament_data["data_type"] == "live", feature_cols].isn
 else:
     print("No nans in the features this week!")
 
-# take note of each our different prediction cols so we can print stats easier later
-pred_cols = []
-
 # predict on the latest data!
 with Halo(text='Predicting on latest data', spinner='dots'):
-    for model_name, model in models.items():
-        # double check the feature that the model expects vs what is available
-        # this prevents our pipeline from failing if Numerai adds more data and we don't have time to retrain!
-        model_expected_features = model.booster_.feature_name()
-        if set(model_expected_features) != set(feature_cols):
-            print(f"New features are available! Might want to retrain model {model_name}.")
-        print(f"\npredicting for model {model_name}")
-        validation_data.loc[:, f"preds_{model_name}"] = model.predict(validation_data.loc[:, model_expected_features])
-        tournament_data.loc[:, f"preds_{model_name}"] = model.predict(tournament_data.loc[:, model_expected_features])
-        pred_cols.append(f"preds_{model_name}")
+    # double check the feature that the model expects vs what is available
+    # this prevents our pipeline from failing if Numerai adds more data and we don't have time to retrain!
+    model_expected_features = model.booster_.feature_name()
+    if set(model_expected_features) != set(feature_cols):
+        print(f"New features are available! Might want to retrain model {model_name}.")
+    print(f"\npredicting for model {model_name}")
+    validation_data.loc[:, f"preds_{model_name}"] = model.predict(validation_data.loc[:, model_expected_features])
+    tournament_data.loc[:, f"preds_{model_name}"] = model.predict(tournament_data.loc[:, model_expected_features])
 
 # getting the per era correlation of each feature vs the target
 all_feature_corrs = training_data.groupby(ERA_COL).apply(lambda d: d[feature_cols].corrwith(d[TARGET_COL]))
@@ -103,34 +94,35 @@ all_feature_corrs = training_data.groupby(ERA_COL).apply(lambda d: d[feature_col
 riskiest_features = get_biggest_change_features(all_feature_corrs, 50)
 
 with Halo(text='Neutralizing to risky features', spinner='dots'):
-    for model_name, model in models.items():
-        # neutralize our predictions to the riskiest features
-        validation_data[f"preds_{model_name}_neutral_riskiest_50"] = neutralize(df=validation_data,
-                                                                                columns=[f"preds_{model_name}"],
-                                                                                neutralizers=riskiest_features,
-                                                                                proportion=1.0,
-                                                                                normalize=True,
-                                                                                era_col=ERA_COL)
+    # neutralize our predictions to the riskiest features
+    validation_data[f"preds_{model_name}_neutral_riskiest_50"] = neutralize(df=validation_data,
+                                                                            columns=[f"preds_{model_name}"],
+                                                                            neutralizers=riskiest_features,
+                                                                            proportion=1.0,
+                                                                            normalize=True,
+                                                                            era_col=ERA_COL)
 
-        tournament_data[f"preds_{model_name}_neutral_riskiest_50"] = neutralize(df=tournament_data,
-                                                                                columns=[f"preds_{model_name}"],
-                                                                                neutralizers=riskiest_features,
-                                                                                proportion=1.0,
-                                                                                normalize=True,
-                                                                                era_col=ERA_COL)
-        pred_cols.append(f"preds_{model_name}_neutral_riskiest_50")
+    tournament_data[f"preds_{model_name}_neutral_riskiest_50"] = neutralize(df=tournament_data,
+                                                                            columns=[f"preds_{model_name}"],
+                                                                            neutralizers=riskiest_features,
+                                                                            proportion=1.0,
+                                                                            normalize=True,
+                                                                            era_col=ERA_COL)
+
+
+model_to_submit = f"preds_{model_name}_neutral_riskiest_50"
+# rename best model to prediction and rank from 0 to 1 to meet diagnostic/submission file requirements
+validation_data["prediction"] = validation_data[model_to_submit].rank(pct=True)
+tournament_data["prediction"] = tournament_data[model_to_submit].rank(pct=True)
+validation_data["prediction"].to_csv(f"validation_predictions_{current_round}.csv")
+tournament_data["prediction"].to_csv(f"tournament_predictions_{current_round}.csv")
 
 # get some stats about each of our models to compare...
 # fast_mode=True so that we skip some of the stats that are slower to calculate
-validation_stats = validation_metrics(validation_data, pred_cols, example_col=EXAMPLE_PREDS_COL, fast_mode=True)
+validation_stats = validation_metrics(validation_data, [model_to_submit], example_col=EXAMPLE_PREDS_COL, fast_mode=True)
 print(validation_stats[["mean", "sharpe"]].to_markdown())
 
-# pick the model that has the highest correlation mean
-best_model = validation_stats.sort_values(by="mean", ascending=False).head(1).index[0]
-print(f"selecting model {best_model} as our highest mean model in validation")
 
-# rename best model to prediction and rank from 0 to 1 to meet diagnostic/submission file requirements
-validation_data["prediction"] = validation_data[best_model].rank(pct=True)
-tournament_data["prediction"] = tournament_data[best_model].rank(pct=True)
-validation_data["prediction"].to_csv(f"validation_predictions_{current_round}.csv")
-tournament_data["prediction"].to_csv(f"tournament_predictions_{current_round}.csv")
+
+
+
