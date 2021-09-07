@@ -16,12 +16,12 @@ These are the example machine learning scripts included with the download of [Nu
 
 # Contents
 * [Quick Start](#quick-start)
-* [Datasets] (#datasets)
+* [Datasets](#data-sets)
 * [Next Steps](#next-steps)
   * [Automating Submissions](#automating-submissions)
   * [Feature Engineering](#feature-engineering)
   * [Using Multiple Targets](#using-multiple-targets)
-* [FAQ](#faq) 
+* [FAQ](#faq)  
 
 # Quick Start
 ```
@@ -45,7 +45,7 @@ file at https://numer.ai/tournament
 
 # Datasets
 
-These datasets were created for the [Numerai Tournament](numer.ai) using real
+The provided datasets are created for the [Numerai Tournament](numer.ai) using real
 hedge-fund-grade data. This section provides explanations about each dataset
 and answer frequently asked questions.
 
