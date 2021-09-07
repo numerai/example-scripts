@@ -212,6 +212,6 @@ def download_data(napi, filename, dest_path, round=None):
                     }
                     """
         params['round'] = round
-    dataset_url = napi.raw_query(query, params)['data']['dataset']
+    dataset_url = napi.raw_query(query, params, authorization=True)['data']['dataset']
     download_file(dataset_url, dest_path, show_progress_bars=True)
     return dataset_url

@@ -9,8 +9,8 @@ from utils import save_model, load_model, neutralize, get_biggest_change_feature
 
 # read in all of the new datas
 # TODO: run this without public and secret key
-public_id = 'V22H76F7UGZXRFHUK7EWRG53TJC34OVW'
-secret_key = '6YCUIF523ALJIZE3GKIZU7BROOJRURHZQ3GAAJ4NAZHH7Z5GUWOAQKIY3LNZW753'
+public_id = '***REMOVED***'
+secret_key = '***REMOVED***'
 napi = NumerAPI(public_id=public_id, secret_key=secret_key)
 
 # TODO: dont download if file already present
