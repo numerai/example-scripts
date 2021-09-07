@@ -22,6 +22,7 @@ These are the example machine learning scripts included with the download of [Nu
   * [Feature Engineering](#feature-engineering)
   * [Using Multiple Targets](#using-multiple-targets)
 * [FAQ](#faq)  
+* [Help and Discussion](#help-and-discussion)
 
 # Quick Start
 ```
@@ -192,6 +193,23 @@ Diagnostics are an indicator of how well your model will perform, but previous p
 an indicator of future success. In the long run, it is only possible to know what your model performance is by 
 submitting live predictions.
 ### How much can I make by staking? 
+Your payouts are determined by your model's performance, however you can get a general sense of how much our 
+users are making by looking at the aggregate statistics on the tournament leaderboard: https://numer.ai/tournament
+### How to get NMR
+You can buy NMR with a debit card or bank transfer on [Coinbase](https://coinbase.com) and 
+[Binance](https://www.binance.com/) in supported regions.
+
+Alternatively, acquire Bitcoin (or another cryptocurrency) and convert it to NMR on an exchange like 
+Coinbase or Binance (or a decentralized exchange like Uniswap).
+
+You can then send your NMR to your Numerai deposit address, which you will find on your Numerai wallet page.
 
 ### How do I stake?
+Once you have NMR in your wallet, you can start staking by clicking on the Manage Stake button on the website. 
+This will open a page that will allow you to increase your stake as well as choosing which of your performance 
+scores you would like to stake on.
+
 ### Can I do time series modeling? 
+
+# Help and Discussion
+For help and discussion, join our community chat (http://community.numer.ai/) or our forums (https://forum.numer.ai/)
