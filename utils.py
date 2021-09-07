@@ -101,7 +101,7 @@ def get_feature_neutral_mean(df, prediction_col):
     return np.mean(scores)
 
 
-def validation_metrics(validation_data, pred_cols, example_col):
+def validation_metrics(validation_data, pred_cols, example_col, fast_mode=False):
     validation_stats = pd.DataFrame()
     feature_cols = [c for c in validation_data if c.startswith("feature_")]
     for pred_col in pred_cols:
@@ -124,17 +124,18 @@ def validation_metrics(validation_data, pred_cols, example_col):
             max_drawdown = -((rolling_max - daily_value) / rolling_max).max()
             validation_stats.loc["max_drawdown", pred_col] = max_drawdown
 
-        # Check the feature exposure of your validation predictions
-        with Halo(text='Calculating feature exposure', spinner='dots'):
-            max_per_era = validation_data.groupby(ERA_COL).apply(
-                lambda d: d[feature_cols].corrwith(d[pred_col]).abs().max())
-            max_feature_exposure = max_per_era.mean()
-            validation_stats.loc["max_feature_exposure", pred_col] = max_feature_exposure
+        if not fast_mode:
+            # Check the feature exposure of your validation predictions
+            with Halo(text='Calculating feature exposure', spinner='dots'):
+                max_per_era = validation_data.groupby(ERA_COL).apply(
+                    lambda d: d[feature_cols].corrwith(d[pred_col]).abs().max())
+                max_feature_exposure = max_per_era.mean()
+                validation_stats.loc["max_feature_exposure", pred_col] = max_feature_exposure
 
-        # Check feature neutral mean
-        with Halo(text='Calculating feature neutral mean', spinner='dots'):
-            feature_neutral_mean = get_feature_neutral_mean(validation_data, pred_col)
-            validation_stats.loc["feature_neutral_mean", pred_col] = feature_neutral_mean
+            # Check feature neutral mean
+            with Halo(text='Calculating feature neutral mean', spinner='dots'):
+                feature_neutral_mean = get_feature_neutral_mean(validation_data, pred_col)
+                validation_stats.loc["feature_neutral_mean", pred_col] = feature_neutral_mean
 
         with Halo(text='Calculating MMC stats', spinner='dots'):
             print("calculating MMC stats...")
@@ -160,7 +161,8 @@ def validation_metrics(validation_data, pred_cols, example_col):
             corr_with_example_preds = per_era_corrs.mean()
             validation_stats.loc["corr_with_example_preds", pred_col] = corr_with_example_preds
 
-    return validation_stats
+    # .transpose so that stats are columns and the model_name is the row
+    return validation_stats.transpose()
 
 
 def download_file(url: str, dest_path: str, show_progress_bars: bool = True):
