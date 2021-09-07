@@ -16,11 +16,11 @@ These are the example machine learning scripts included with the download of [Nu
 
 # Contents
 * [Quick Start](#quick-start)
+* [Datasets] (#datasets)
 * [Next Steps](#next-steps)
-  * [Understanding the Data](#understanding-data)
   * [Automating Submissions](#automating-submissions)
   * [Feature Engineering](#feature-engineering)
-  * [Feature Engineering](#feature-engineering)
+  * [Using Multiple Targets](#using-multiple-targets)
 * [FAQ](#faq) 
 
 # Quick Start
@@ -29,10 +29,11 @@ pip install -r requirements.txt
 python example_model.py
 ```
 
-The example script model will produce a `validation_predictions.csv` file which you can upload at https://numer.ai/tournament
-to get model diagnostics.
+The example script model will produce a `validation_predictions.csv` file which you can upload at 
+https://numer.ai/tournament to get model diagnostics.
 
-> TIP: The example_model.py script takes approximately 45 minutes to run. In the mean time, we recommend reading the [Understanding the Data](#understanding-data) section
+> TIP: The example_model.py script takes ~45-60 minutes to run. In the mean time, we recommend 
+> reading the [Next Steps](#next-steps) section
 
 ![upload-diagnostics](https://github.com/numerai/example-scripts/blob/chris/update-example-scripts/media/upload_diagnostics.gif)
 
@@ -42,10 +43,7 @@ file at https://numer.ai/tournament
 
 ![upload-tournament](https://github.com/numerai/example-scripts/blob/chris/update-example-scripts/media/upload_tournament.gif)
 
-# Next Steps
-Now that you have your first model diagnostics, we have outlined some next steps which you can take to improve your 
-model performance.
-## Understanding the Data
+# Datasets
 
 These datasets were created for the [Numerai Tournament](numer.ai) using real
 hedge-fund-grade data. This section provides explanations about each dataset
@@ -174,8 +172,15 @@ of the stock at the time. The `target` represents an abstract measure of perform
 - Notes: This file changes every week, so make sure you're predicting on the most
   recent version of this file each round.
 
+# Next Steps
+The supplied `example_model.py` script is the baseline for a model that can provide useful predictions to our 
+metamodel. We have outlined some next steps which you can use to improve your 
+model performance and payouts.
+
+
+
 ## Automating Submissions
-The first step in automating submissions is to create API keys for your model and use them when creating your
+The first step in automating submissions is to create API keys for your model (https://numer.ai/account) and use them when creating your
 NumerAPI client:
 
 ```python
@@ -184,24 +189,41 @@ example_secret_key = "somesecretkey"
 napi = numerapi.NumerAPI(example_public_id, example_secret_key)
 ```
 
+After instantiating the NumerAPI client with API keys, you can then upload your submissions programmatically:
+
+```python
+# upload predictions
+model_id = napi.get_models()['your_model_name']
+napi.upload_predictions("tournament_predictions.csv", model_id=model_id)
+```
 
 
-The recommended setup for a fully automated submission process is to setup Numerai Compute. Please see the 
-[Numerai CLI documentation](https://github.com/numerai/numerai-cli) for instructions on how to setup and 
-deploy your models to AWS
+The recommended setup for a fully automated submission process is to use Numerai Compute. Please see the 
+[Numerai CLI documentation](https://github.com/numerai/numerai-cli) for instructions on how to deploy your 
+models to AWS
 
 ## Feature engineering
 > TODO: show code snippets from example_script where we find riskiest features and do feature neutralization
-## Utilizing multiple targets
+
+> TODO: ideas/hints on what other types of feature engineering could be done
+
+For more information on neutralization, see this forum post by user JRB https://forum.numer.ai/t/model-diagnostics-feature-exposure/899
+
+## Using multiple targets
 > TODO: show code snippets from example_script where we predict on multiple models and then ensemble. 
 > Also show the validation diagnostics for each
 
-## Staking
-## Signals
+> TODO: explain what each target is!
+ 
+> TODO: ideas/hints on how to combine multiple models
 
 # FAQ
 ### Are my diagnostic metrics good?
-### What are eras? 
+Diagnostics are an indicator of how well your model will perform, but it is possible to have a model with good
+diagnostics that performs poorly on live data and vice versa. Previous performance is not necessarily an indicator
+of future success. In the long run, it is only possible to know what your model performance is by 
+submitting live predictions.
 ### How much can I make by staking? 
+
 ### How do I stake?
 ### Can I do time series modeling? 
