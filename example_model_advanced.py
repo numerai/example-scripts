@@ -82,6 +82,7 @@ for target in train_targets:
             model.fit(training_data.loc[:, feature_cols], training_data[target])
             print(f"saving new model: {model_name}")
             save_model(model, model_name)
+    gc.collect()
 
     models[model_name] = model
 
