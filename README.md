@@ -33,6 +33,8 @@ python example_model.py
 The example script model will produce a `validation_predictions.csv` file which you can upload at https://numer.ai/tournament
 to get model diagnostics.
 
+> TIP: The example_model.py script takes approximately 45 minutes to run. In the mean time, we recommend reading the [Understanding the Data](#understanding-data) section
+
 ![upload-predictions](https://github.com/numerai/example-scripts/blob/chris/update-example-scripts/media/upload_predictions.gif)
 
 If the current round is open (Saturday 18:00 UTC through Monday 14:30 UTC), you can submit predictions and start

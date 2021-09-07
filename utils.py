@@ -1,28 +1,27 @@
-import dill as pickle  # for pickling xgb models in s3
-import io
-import boto3
-import logging
-import numpy as np
 import os
-import pandas as pd
+import logging
 import requests
+import numpy as np
+import pandas as pd
 import scipy
+from halo import Halo
+from pathlib import Path
 
 ERA_COL = "era"
 TARGET_COL = "target"
 
 
 def save_model(model, name):
-    pickle.dump(model, open(name, "wb"))
-    # s3_client.upload_fileobj(my_array_data, 'numerai-data-gen', f"mikep/example_models/{name}.pkl")
+    pd.to_pickle(model, f"{name}.pkl")
 
 
-def load_model(model_file):
-    try:
-        result = pickle.load(open(model_file, "wb"))
-    except Exception as e:
-        return False
-    return result
+def load_model(name):
+    path = Path(f"{name}.pkl")
+    if path.is_file():
+        model = pd.read_pickle(f"{name}.pkl")
+    else:
+        model = False
+    return model
 
 
 def get_biggest_change_features(corrs, n):
@@ -49,7 +48,6 @@ def neutralize(df,
     unique_eras = df[era_col].unique()
     computed = []
     for u in unique_eras:
-        print(u, end="\r")
         df_era = df[df[era_col] == u]
         scores = df_era[columns].values
         if normalize:
@@ -107,60 +105,62 @@ def validation_metrics(validation_data, pred_cols, example_col):
     validation_stats = pd.DataFrame()
     feature_cols = [c for c in validation_data if c.startswith("feature_")]
     for pred_col in pred_cols:
-        print(f"doing col: {pred_col}")
+        print(f"Doing validation metrics on: {pred_col}")
         # Check the per-era correlations on the validation set (out of sample)
-        print("calculating correlations...")
-        validation_correlations = validation_data.groupby(ERA_COL).apply(
-            lambda d: unif(d[pred_col]).corr(d[TARGET_COL]))
-        mean = validation_correlations.mean()
-        std = validation_correlations.std(ddof=0)
-        sharpe = mean / std
-        validation_stats.loc["mean", pred_col] = mean
-        validation_stats.loc["std", pred_col] = std
-        validation_stats.loc["sharpe", pred_col] = sharpe
+        with Halo(text='Calculating correlations', spinner='dots'):
+            validation_correlations = validation_data.groupby(ERA_COL).apply(
+                lambda d: unif(d[pred_col]).corr(d[TARGET_COL]))
+            mean = validation_correlations.mean()
+            std = validation_correlations.std(ddof=0)
+            sharpe = mean / std
+            validation_stats.loc["mean", pred_col] = mean
+            validation_stats.loc["std", pred_col] = std
+            validation_stats.loc["sharpe", pred_col] = sharpe
 
-        print("checking max drawdown...")
-        rolling_max = (validation_correlations + 1).cumprod().rolling(window=9000,  # arbitrarily large
-                                                                      min_periods=1).max()
-        daily_value = (validation_correlations + 1).cumprod()
-        max_drawdown = -((rolling_max - daily_value) / rolling_max).max()
-        validation_stats.loc["max_drawdown", pred_col] = max_drawdown
+        with Halo(text='Calculating max drawdown', spinner='dots'):
+            rolling_max = (validation_correlations + 1).cumprod().rolling(window=9000,  # arbitrarily large
+                                                                          min_periods=1).max()
+            daily_value = (validation_correlations + 1).cumprod()
+            max_drawdown = -((rolling_max - daily_value) / rolling_max).max()
+            validation_stats.loc["max_drawdown", pred_col] = max_drawdown
 
         # Check the feature exposure of your validation predictions
-        print("checking feature exposure")
-        max_per_era = validation_data.groupby(ERA_COL).apply(
-            lambda d: d[feature_cols].corrwith(d[pred_col]).abs().max())
-        max_feature_exposure = max_per_era.mean()
-        validation_stats.loc["max_feature_exposure", pred_col] = max_feature_exposure
+        with Halo(text='Calculating feature exposure', spinner='dots'):
+            max_per_era = validation_data.groupby(ERA_COL).apply(
+                lambda d: d[feature_cols].corrwith(d[pred_col]).abs().max())
+            max_feature_exposure = max_per_era.mean()
+            validation_stats.loc["max_feature_exposure", pred_col] = max_feature_exposure
 
         # Check feature neutral mean
-        print("Calculating feature neutral mean...")
-        feature_neutral_mean = get_feature_neutral_mean(validation_data, pred_col)
-        validation_stats.loc["feature_neutral_mean", pred_col] = feature_neutral_mean
+        with Halo(text='Calculating feature neutral mean', spinner='dots'):
+            feature_neutral_mean = get_feature_neutral_mean(validation_data, pred_col)
+            validation_stats.loc["feature_neutral_mean", pred_col] = feature_neutral_mean
 
-        print("calculating MMC stats...")
-        # MMC over validation
-        mmc_scores = []
-        corr_scores = []
-        for _, x in validation_data.groupby(ERA_COL):
-            series = neutralize_series(unif(x[pred_col]), (x[example_col]))
-            mmc_scores.append(np.cov(series, x[TARGET_COL])[0, 1] / (0.29 ** 2))
-            corr_scores.append(unif(x[pred_col]).corr(x[TARGET_COL]))
+        with Halo(text='Calculating MMC stats', spinner='dots'):
+            print("calculating MMC stats...")
+            # MMC over validation
+            mmc_scores = []
+            corr_scores = []
+            for _, x in validation_data.groupby(ERA_COL):
+                series = neutralize_series(unif(x[pred_col]), (x[example_col]))
+                mmc_scores.append(np.cov(series, x[TARGET_COL])[0, 1] / (0.29 ** 2))
+                corr_scores.append(unif(x[pred_col]).corr(x[TARGET_COL]))
 
-        val_mmc_mean = np.mean(mmc_scores)
-        val_mmc_std = np.std(mmc_scores)
-        corr_plus_mmcs = [c + m for c, m in zip(corr_scores, mmc_scores)]
-        corr_plus_mmc_sharpe = np.mean(corr_plus_mmcs) / np.std(corr_plus_mmcs)
+            val_mmc_mean = np.mean(mmc_scores)
+            val_mmc_std = np.std(mmc_scores)
+            corr_plus_mmcs = [c + m for c, m in zip(corr_scores, mmc_scores)]
+            corr_plus_mmc_sharpe = np.mean(corr_plus_mmcs) / np.std(corr_plus_mmcs)
 
-        validation_stats.loc["mmc_mean", pred_col] = val_mmc_mean
-        validation_stats.loc["corr_plus_mmc_sharpe", pred_col] = corr_plus_mmc_sharpe
+            validation_stats.loc["mmc_mean", pred_col] = val_mmc_mean
+            validation_stats.loc["corr_plus_mmc_sharpe", pred_col] = corr_plus_mmc_sharpe
 
-        # Check correlation with example predictions
-        per_era_corrs = validation_data.groupby(ERA_COL).apply(lambda d: unif(d[pred_col]).corr(unif(d["example_preds"])))
-        corr_with_example_preds = per_era_corrs.mean()
-        validation_stats.loc["corr_with_example_preds", pred_col] = corr_with_example_preds
+        with Halo(text='Calculating correlation with example predictions', spinner='dots'):
+            # Check correlation with example predictions
+            per_era_corrs = validation_data.groupby(ERA_COL).apply(lambda d: unif(d[pred_col]).corr(unif(d["example_preds"])))
+            corr_with_example_preds = per_era_corrs.mean()
+            validation_stats.loc["corr_with_example_preds", pred_col] = corr_with_example_preds
 
-        return validation_stats
+    return validation_stats
 
 
 def download_file(url: str, dest_path: str, show_progress_bars: bool = True):
@@ -181,7 +181,6 @@ def download_file(url: str, dest_path: str, show_progress_bars: bool = True):
                                verify=False, allow_redirects=True)
         elif file_size == total_size:
             # Download complete
-            logging.info("download complete")
             return
         else:
             # Error, delete file and restart download
@@ -213,6 +212,6 @@ def download_data(napi, filename, dest_path, round=None):
                     }
                     """
         params['round'] = round
-    dataset_url = napi.raw_query(query, params, authorization=True)['data']['dataset']
+    dataset_url = napi.raw_query(query, params)['data']['dataset']
     download_file(dataset_url, dest_path, show_progress_bars=True)
     return dataset_url
