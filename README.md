@@ -47,7 +47,7 @@ file at https://numer.ai/tournament
 
 The provided datasets are created for the [Numerai Tournament](numer.ai) using real
 hedge-fund-grade data. This section provides explanations about each dataset
-and answer frequently asked questions.
+and answers to frequently asked questions.
 
 The data files include three types of datasets:
 
@@ -180,7 +180,7 @@ model performance and payouts.
 
 
 ## Automating Submissions
-The first step in automating submissions is to create API keys for your model (https://numer.ai/account) and use them when creating your
+The first step in automating submissions is to create API keys for your model (https://numer.ai/account) and provide them when creating the
 NumerAPI client:
 
 ```python
@@ -219,9 +219,8 @@ For more information on neutralization, see this forum post by user JRB https://
 
 # FAQ
 ### Are my diagnostic metrics good?
-Diagnostics are an indicator of how well your model will perform, but it is possible to have a model with good
-diagnostics that performs poorly on live data and vice versa. Previous performance is not necessarily an indicator
-of future success. In the long run, it is only possible to know what your model performance is by 
+Diagnostics are an indicator of how well your model will perform, but previous performance is not necessarily 
+an indicator of future success. In the long run, it is only possible to know what your model performance is by 
 submitting live predictions.
 ### How much can I make by staking? 
 
