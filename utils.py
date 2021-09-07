@@ -5,6 +5,7 @@ import pandas as pd
 import scipy
 from halo import Halo
 from pathlib import Path
+from scipy.stats import skew, kurtosis
 
 ERA_COL = "era"
 TARGET_COL = "target"
@@ -100,6 +101,44 @@ def get_feature_neutral_mean(df, prediction_col):
     return np.mean(scores)
 
 
+def fast_score_by_date(df, columns, target, tb=None, era_col="era"):
+    unique_eras = df[era_col].unique()
+    computed = []
+    for u in unique_eras:
+        df_era = df[df[era_col] == u]
+        era_pred = np.float64(df_era[columns].values.T)
+        era_target = np.float64(df_era[target].values.T)
+
+        if tb is None:
+            ccs = np.corrcoef(era_target, era_pred)[0, 1:]
+        else:
+            tbidx = np.argsort(era_pred, axis=1)
+            tbidx = np.concatenate([tbidx[:, :tb], tbidx[:, -tb:]], axis=1)
+            ccs = [np.corrcoef(era_target[tmpidx], tmppred[tmpidx])[0, 1] for tmpidx, tmppred in zip(tbidx, era_pred)]
+            ccs = np.array(ccs)
+
+        computed.append(ccs)
+
+    return pd.DataFrame(np.array(computed), columns=columns, index=df[era_col].unique())
+
+
+def annual_sharpe(x):
+    return ((np.mean(x) - 0.010415154) / np.std(x)) * np.sqrt(12)
+
+
+def adjusted_sharpe(x):
+    return annual_sharpe(x) * (
+        1
+        + ((skew(x) / 6) * annual_sharpe(x))
+        - ((kurtosis(x) - 3) / 24)
+        * (annual_sharpe(x) ** 2)
+    )
+
+
+def autocorrelation(x):
+    return np.corrcoef(x[:-1], x[1:])[0,1]
+
+
 def validation_metrics(validation_data, pred_cols, example_col, fast_mode=False):
     validation_stats = pd.DataFrame()
     feature_cols = [c for c in validation_data if c.startswith("feature_")]
@@ -108,12 +147,18 @@ def validation_metrics(validation_data, pred_cols, example_col, fast_mode=False)
         with Halo(text='Calculating correlations', spinner='dots'):
             validation_correlations = validation_data.groupby(ERA_COL).apply(
                 lambda d: unif(d[pred_col]).corr(d[TARGET_COL]))
+
             mean = validation_correlations.mean()
             std = validation_correlations.std(ddof=0)
             sharpe = mean / std
+            adj_sharpe = adjusted_sharpe(validation_correlations)
+            autocorr = autocorrelation(validation_correlations)
+
             validation_stats.loc["mean", pred_col] = mean
             validation_stats.loc["std", pred_col] = std
             validation_stats.loc["sharpe", pred_col] = sharpe
+            validation_stats.loc["adj_sharpe", pred_col] = adj_sharpe
+            validation_stats.loc["autocorr", pred_col] = autocorr
 
         with Halo(text='Calculating max drawdown', spinner='dots'):
             rolling_max = (validation_correlations + 1).cumprod().rolling(window=9000,  # arbitrarily large
@@ -121,6 +166,21 @@ def validation_metrics(validation_data, pred_cols, example_col, fast_mode=False)
             daily_value = (validation_correlations + 1).cumprod()
             max_drawdown = -((rolling_max - daily_value) / rolling_max).max()
             validation_stats.loc["max_drawdown", pred_col] = max_drawdown
+
+        with Halo(text='Calculating APY', spinner='dots'):
+            payout_scores = validation_correlations.clip(-0.25, 0.25)
+            payout_daily_value = (payout_scores + 1).cumprod()
+
+            apy = (
+                (
+                    (payout_daily_value.dropna().iloc[-1])
+                    ** (1 / len(payout_scores))
+                )
+                ** 49  # 52 weeks of compounding minus 3 for stake compounding lag
+                - 1
+            ) * 100
+
+            validation_stats.loc["apy", pred_col] = apy
 
         if not fast_mode:
             # Check the feature exposure of your validation predictions
@@ -134,6 +194,28 @@ def validation_metrics(validation_data, pred_cols, example_col, fast_mode=False)
             with Halo(text='Calculating feature neutral mean', spinner='dots'):
                 feature_neutral_mean = get_feature_neutral_mean(validation_data, pred_col)
                 validation_stats.loc["feature_neutral_mean", pred_col] = feature_neutral_mean
+
+            # Check top and bottom 200 metrics (TB200)
+            with Halo(text='Calculating TB200 correlations', spinner='dots'):
+                tb200_validation_correlations = fast_score_by_date(
+                    validation_data,
+                    [pred_col],
+                    TARGET_COL,
+                    tb=200,
+                    era_col=ERA_COL
+                )
+
+                tb200_mean = tb200_validation_correlations.mean()
+                tb200_std = tb200_validation_correlations.std(ddof=0)
+                tb200_sharpe = mean / std
+                tb200_adj_sharpe = adjusted_sharpe(validation_correlations)
+                tb200_autocorr = autocorrelation(validation_correlations)
+
+                validation_stats.loc["tb200_mean", pred_col] = tb200_mean
+                validation_stats.loc["tb200_std", pred_col] = tb200_std
+                validation_stats.loc["tb200_sharpe", pred_col] = tb200_sharpe
+                validation_stats.loc["tb200_adj_sharpe", pred_col] = tb200_adj_sharpe
+                validation_stats.loc["tb200_autocorr", pred_col] = tb200_autocorr
 
         with Halo(text='Calculating MMC stats', spinner='dots'):
             print("calculating MMC stats...")
