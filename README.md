@@ -188,8 +188,8 @@ models to AWS.
 
 ### What are the system requirements?
 
-Minimum: 16GB RAM and 4 core (Intel i5) / 6 cores (AMD Ryzen 5)
-Recommended: 32GB RAM and 8 core (Intel i7/i9) / 12 cores (AMD Ryzen 7/9)
+- Minimum: 16GB RAM and 4 core (Intel i5) / 6 cores (AMD Ryzen 5)
+- Recommended: 32GB RAM and 8 core (Intel i7/i9) / 12 cores (AMD Ryzen 7/9)
 
 ### What exactly is in the Numerai dataset?
 
