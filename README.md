@@ -12,7 +12,7 @@
      \/__/         \/__/         \/__/         \/__/         \|__|         \/__/                
 ```
 
-These are the example machine learning scripts included with the download of [Numerai's data](https://numer.ai/learn).
+These are the example machine learning scripts included with the download of [Numerai's data](https://numer.ai/).
 
 # Contents
 * [Quick Start](#quick-start)
@@ -32,7 +32,8 @@ python example_model.py
 The example script model will produce a `validation_predictions.csv` file which you can upload at 
 https://numer.ai/tournament to get model diagnostics.
 
-> TIP: The example_model.py script takes ~45-60 minutes to run. In the mean time, we recommend 
+> TIP: The example_model.py script takes ~45-60 minutes to run. In the mean time, you can upload
+> `example_diagnostic_predictions.csv` to get diagnostics immediately. We also recommend 
 > reading the [Next Steps](#next-steps) section
 
 ![upload-diagnostics](https://github.com/numerai/example-scripts/blob/chris/update-example-scripts/media/upload_diagnostics.gif)
@@ -44,68 +45,6 @@ file at https://numer.ai/tournament
 ![upload-tournament](https://github.com/numerai/example-scripts/blob/chris/update-example-scripts/media/upload_tournament.gif)
 
 # Datasets
-
-The provided datasets are created for the [Numerai Tournament](numer.ai) using real
-hedge-fund-grade data. This section provides explanations about each dataset
-and answers to frequently asked questions.
-
-The data files include three types of datasets:
-
-* Training data - historical data used to train your model
-* Validation data - holdout data used to validate and run diagnostics on your trained model
-* Tournament data - combination of test and live data. Live data is what will be used for the upcoming round, and
-test data is used for Numerai's internal analysis. 
-
-Each `id` corresponds to a stock at a specific time `era`. The features describe the various quantitative attributes 
-of the stock at the time. The `target` represents an abstract measure of performance ~4 weeks into the future.
-
-### numerai_datasets.zip
-
-- Description: Everything you need to start submitting to the tournament.
-
-- Contents:
-
-    - This README
-
-    - CSV/parquet versions of each file listed below
-
-    - Basic example model code
-
-    - A jupyter notebook with data analysis examples/tips
-
-- Notes: This is what you download from the leaderboard sidebar in the website.
-
-
-### example_predictions
-
-- Description: An example of predictions on the numerai_tournament_data file.
-
-- Contents:
-
-    - "id": string labels of obfuscated stock IDs
-
-    - "prediction": floating-point numbers between 0 and 1 (exclusive)
-
-- Notes: Useful for ensuring you can make a submission and debugging your prediction 
-  file if you receive an error from the submissions API. This is what your submissions
-  should look like (same ids and data types).
-
-
-### example_validation_predictions
-
-- Description: An example of predictions on the numerai_validation_data file.
-
-- Contents:
-
-    - "id": string labels of obfuscated stock IDs
-
-    - "prediction": floating-point numbers between 0 and 1 (exclusive)
-
-- Notes: Useful for ensuring you can get diagnostics and debugging your prediction 
-  file if you receive an error from the diagnostics API. This is what your uploads
-  should look like when using the diagnostics section under a model's "More" dropdown 
-  in the [models page](numer.ai/models).
-
 
 ### numerai_training_data
 
@@ -171,6 +110,36 @@ of the stock at the time. The `target` represents an abstract measure of perform
 
 - Notes: This file changes every week, so make sure you're predicting on the most
   recent version of this file each round.
+
+### example_predictions
+
+- Description: An example of predictions on the numerai_tournament_data file.
+
+- Contents:
+
+    - "id": string labels of obfuscated stock IDs
+
+    - "prediction": floating-point numbers between 0 and 1 (exclusive)
+
+- Notes: Useful for ensuring you can make a submission and debugging your prediction 
+  file if you receive an error from the submissions API. This is what your submissions
+  should look like (same ids and data types).
+
+
+### example_validation_predictions
+
+- Description: An example of predictions on the numerai_validation_data file.
+
+- Contents:
+
+    - "id": string labels of obfuscated stock IDs
+
+    - "prediction": floating-point numbers between 0 and 1 (exclusive)
+
+- Notes: Useful for ensuring you can get diagnostics and debugging your prediction 
+  file if you receive an error from the diagnostics API. This is what your uploads
+  should look like when using the diagnostics section under a model's "More" dropdown 
+  in the [models page](numer.ai/models).
 
 # Next Steps
 The supplied `example_model.py` script is the baseline for a model that can provide useful predictions to our 

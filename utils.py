@@ -105,7 +105,6 @@ def validation_metrics(validation_data, pred_cols, example_col, fast_mode=False)
     validation_stats = pd.DataFrame()
     feature_cols = [c for c in validation_data if c.startswith("feature_")]
     for pred_col in pred_cols:
-        print(f"Doing validation metrics on: {pred_col}")
         # Check the per-era correlations on the validation set (out of sample)
         with Halo(text='Calculating correlations', spinner='dots'):
             validation_correlations = validation_data.groupby(ERA_COL).apply(
@@ -173,11 +172,9 @@ def download_file(url: str, dest_path: str, show_progress_bars: bool = True):
     total_size = int(req.headers.get('content-length', 0))
 
     if os.path.exists(dest_path):
-        logging.info("target file already exists")
         file_size = os.stat(dest_path).st_size  # File size in bytes
         if file_size < total_size:
             # Download incomplete
-            logging.info("resuming download")
             resume_header = {'Range': 'bytes=%d-' % file_size}
             req = requests.get(url, headers=resume_header, stream=True,
                                verify=False, allow_redirects=True)
@@ -186,12 +183,8 @@ def download_file(url: str, dest_path: str, show_progress_bars: bool = True):
             return
         else:
             # Error, delete file and restart download
-            logging.error("deleting file and restarting")
             os.remove(dest_path)
             file_size = 0
-    else:
-        # File does not exist, starting download
-        logging.info("starting download")
 
     with open(dest_path, "ab") as dest_file:
         for chunk in req.iter_content(1024):
