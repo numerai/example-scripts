@@ -1,32 +1,27 @@
 ```
-      ___           ___           ___           ___           ___           ___                 
-     /\__\         /\__\         /\__\         /\  \         /\  \         /\  \          ___   
-    /::|  |       /:/  /        /::|  |       /::\  \       /::\  \       /::\  \        /\  \  
-   /:|:|  |      /:/  /        /:|:|  |      /:/\:\  \     /:/\:\  \     /:/\:\  \       \:\  \ 
-  /:/|:|  |__   /:/  /  ___   /:/|:|__|__   /::\~\:\  \   /::\~\:\  \   /::\~\:\  \      /::\__\
- /:/ |:| /\__\ /:/__/  /\__\ /:/ |::::\__\ /:/\:\ \:\__\ /:/\:\ \:\__\ /:/\:\ \:\__\  __/:/\/__/
- \/__|:|/:/  / \:\  \ /:/  / \/__/~~/:/  / \:\~\:\ \/__/ \/_|::\/:/  / \/__\:\/:/  / /\/:/  /   
-     |:/:/  /   \:\  /:/  /        /:/  /   \:\ \:\__\      |:|::/  /       \::/  /  \::/__/    
-     |::/  /     \:\/:/  /        /:/  /     \:\ \/__/      |:|\/__/        /:/  /    \:\__\    
-     /:/  /       \::/  /        /:/  /       \:\__\        |:|  |         /:/  /      \/__/    
-     \/__/         \/__/         \/__/         \/__/         \|__|         \/__/                
+███╗   ██╗██╗   ██╗███╗   ███╗███████╗██████╗  █████╗ ██╗
+████╗  ██║██║   ██║████╗ ████║██╔════╝██╔══██╗██╔══██╗██║
+██╔██╗ ██║██║   ██║██╔████╔██║█████╗  ██████╔╝███████║██║
+██║╚██╗██║██║   ██║██║╚██╔╝██║██╔══╝  ██╔══██╗██╔══██║██║
+██║ ╚████║╚██████╔╝██║ ╚═╝ ██║███████╗██║  ██║██║  ██║██║
+╚═╝  ╚═══╝ ╚═════╝ ╚═╝     ╚═╝╚══════╝╚═╝  ╚═╝╚═╝  ╚═╝╚═╝
 ```
 
-These are the example machine learning scripts included with the download of [Numerai's data](https://numer.ai/).
+The official example scripts for the [Numerai](https://numer.ai/) Data Science Tournament.
 
 # Contents
 * [Quick Start](#quick-start)
 * [Datasets](#data-sets)
 * [Next Steps](#next-steps)
+  * [Improving Model Performance](#improve-your-model-performance)
+  * [Staking](#staking)
   * [Automating Submissions](#automating-submissions)
-  * [Feature Engineering](#feature-engineering)
-  * [Using Multiple Targets](#using-multiple-targets)
 * [FAQ](#faq)  
 * [Help and Discussion](#help-and-discussion)
 
 # Quick Start
 ```
-pip install -r requirements.txt
+pip install -U pip && pip install -r requirements.txt
 python example_model.py
 ```
 
@@ -37,13 +32,13 @@ https://numer.ai/tournament to get model diagnostics.
 > `example_diagnostic_predictions.csv` to get diagnostics immediately. We also recommend 
 > reading the [Next Steps](#next-steps) section
 
-![upload-diagnostics](https://github.com/numerai/example-scripts/blob/chris/update-example-scripts/media/upload_diagnostics.gif)
+![upload-diagnostics](https://numerai-public-images.s3.us-west-2.amazonaws.com/example-scripts/upload_diagnostics.gif)
 
 If the current round is open (Saturday 18:00 UTC through Monday 14:30 UTC), you can submit predictions and start
 getting results on live tournament data. You can create your submission by uploading the `tournament_predictions.csv`
 file at https://numer.ai/tournament
 
-![upload-tournament](https://github.com/numerai/example-scripts/blob/chris/update-example-scripts/media/upload_tournament.gif)
+![upload-tournament](https://numerai-public-images.s3.us-west-2.amazonaws.com/example-scripts/upload_tournament.gif)
 
 # Datasets
 
@@ -148,6 +143,15 @@ metamodel. We have outlined some next steps which you can use to improve your
 model performance and payouts.
 
 
+## Improve your model performance
+> TODO: show code snippets from example_script where we find riskiest features and do feature neutralization
+
+> TODO: ideas/hints on what other types of feature engineering could be done
+
+For more information on neutralization, see this forum post by user JRB https://forum.numer.ai/t/model-diagnostics-feature-exposure/899
+
+## Staking
+> TODO: how to stake? 
 
 ## Automating Submissions
 The first step in automating submissions is to create API keys for your model (https://numer.ai/account) and provide them when creating the
@@ -172,44 +176,17 @@ The recommended setup for a fully automated submission process is to use Numerai
 [Numerai CLI documentation](https://github.com/numerai/numerai-cli) for instructions on how to deploy your 
 models to AWS
 
-## Feature engineering
-> TODO: show code snippets from example_script where we find riskiest features and do feature neutralization
-
-> TODO: ideas/hints on what other types of feature engineering could be done
-
-For more information on neutralization, see this forum post by user JRB https://forum.numer.ai/t/model-diagnostics-feature-exposure/899
-
-## Using multiple targets
-> TODO: show code snippets from example_script where we predict on multiple models and then ensemble. 
-> Also show the validation diagnostics for each
-
-> TODO: explain what each target is!
- 
-> TODO: ideas/hints on how to combine multiple models
-
 # FAQ
-### Are my diagnostic metrics good?
-Diagnostics are an indicator of how well your model will perform, but previous performance is not necessarily 
-an indicator of future success. In the long run, it is only possible to know what your model performance is by 
-submitting live predictions.
-### How much can I make by staking? 
-Your payouts are determined by your model's performance, however you can get a general sense of how much our 
-users are making by looking at the aggregate statistics on the tournament leaderboard: https://numer.ai/tournament
-### How to get NMR
-You can buy NMR with a debit card or bank transfer on [Coinbase](https://coinbase.com) and 
-[Binance](https://www.binance.com/) in supported regions.
 
-Alternatively, acquire Bitcoin (or another cryptocurrency) and convert it to NMR on an exchange like 
-Coinbase or Binance (or a decentralized exchange like Uniswap).
+### Suggested system requirements
+Macbook Pros 
 
-You can then send your NMR to your Numerai deposit address, which you will find on your Numerai wallet page.
+### How often does data update?
 
-### How do I stake?
-Once you have NMR in your wallet, you can start staking by clicking on the Manage Stake button on the website. 
-This will open a page that will allow you to increase your stake as well as choosing which of your performance 
-scores you would like to stake on.
 
-### Can I do time series modeling? 
+### How  
 
 # Help and Discussion
-For help and discussion, join our community chat (http://community.numer.ai/) or our forums (https://forum.numer.ai/)
+For help and discussion, join our [community chat](http://community.numer.ai/) or our [forums](https://forum.numer.ai/)
+
+If something doesn't work, please [file an issue](https://github.com/numerai/example-scripts/issues)
