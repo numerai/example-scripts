@@ -48,17 +48,9 @@ if model_selection_loop:
 
     # pick some targets to use
     possible_targets = [c for c in training_data.columns if c.startswith("target_")]
-    # this code greedily selects the target that is least correlated with all prior selected targets
-    print("calculating target correlations")
-    target_correlations = training_data.groupby(ERA_COL).apply(lambda d: d[possible_targets+[TARGET_COL]].corr()).mean(level=1)
-    targets = [TARGET_COL]
-    print("selecting targets to use")
-    desired_targets = 5
-    for i in range(desired_targets-1):
-        existing_targets_corr_df = target_correlations.loc[:, targets]
-        min_corr_new_target = existing_targets_corr_df.prod(axis=1).idxmin()
-        targets.append(min_corr_new_target)
-    print(f"selected targets are {targets}")
+    # randomly pick a handful of targets
+    # this can be vastly improved
+    targets = ["target", "target_nomi_60", "target_jerome_20", "target_alan_20"]
 
     # all the possible features to train on
     feature_cols = [c for c in training_data if c.startswith("feature_")]
@@ -91,7 +83,7 @@ if model_selection_loop:
             print(f"model: {model_name}")
 
             # train a model on the training split (and save it for future use)
-            split_model_name = f"model_{target}_split{split+1}cv{cv}"
+            split_model_name = f"model_{target}_split{split+1}cv{cv}downsample{downsample_cross_val}"
             split_model = load_model(split_model_name)
             if not split_model:
                 print(f"training model: {model_name}")
@@ -159,7 +151,7 @@ if model_selection_loop:
 
     for target in targets:
         gc.collect()
-        model_name = f"model_{target}"
+        model_name = f"model_{target}_downsample{downsample_full_train}"
         model = load_model(model_name)
         if not model:
             print(f"training {model_name}")
