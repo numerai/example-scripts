@@ -79,7 +79,7 @@ if model_selection_loop:
 
         # getting the per era correlation of each feature vs the primary target across the training split
         print("getting feature correlations over time and identifying riskiest features")
-        all_feature_corrs_split = training_data.loc[train_split_index, :].groupby(ERA_COL).apply(
+        all_feature_corrs_split = training_data.loc[downsampled_train_split_index, :].groupby(ERA_COL).apply(
             lambda d: d[feature_cols].corrwith(d[TARGET_COL]))
         # find the riskiest features by comparing their correlation vs the target in half 1 and half 2 of training data
         # there are probably more clever ways to do this

@@ -259,7 +259,6 @@ def validation_metrics(validation_data, pred_cols, example_col, fast_mode=False)
             validation_stats.loc["tb200_adj_sharpe", pred_col] = tb200_adj_sharpe
             validation_stats.loc["tb200_autocorr", pred_col] = tb200_autocorr
 
-        print("calculating MMC stats...")
         # MMC over validation
         mmc_scores = []
         corr_scores = []
@@ -277,7 +276,7 @@ def validation_metrics(validation_data, pred_cols, example_col, fast_mode=False)
         validation_stats.loc["corr_plus_mmc_sharpe", pred_col] = corr_plus_mmc_sharpe
 
         # Check correlation with example predictions
-        per_era_corrs = validation_data.groupby(ERA_COL).apply(lambda d: unif(d[pred_col]).corr(unif(d["example_preds"])))
+        per_era_corrs = validation_data.groupby(ERA_COL).apply(lambda d: unif(d[pred_col]).corr(unif(d[example_col])))
         corr_with_example_preds = per_era_corrs.mean()
         validation_stats.loc["corr_with_example_preds", pred_col] = corr_with_example_preds
 
