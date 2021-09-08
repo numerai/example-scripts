@@ -20,7 +20,7 @@ model_params = {"n_estimators": 2000,
 # the amount of downsampling we'll use to speed up cross validation and full train.
 # a value of 1 means no downsampling
 # a value of 10 means use every 10th row
-downsample_cross_val = 10
+downsample_cross_val = 40
 downsample_full_train = 4
 
 # if model_selection_loop=True get OOS performance for training_data
@@ -50,7 +50,7 @@ if model_selection_loop:
     possible_targets = [c for c in training_data.columns if c.startswith("target_")]
     # randomly pick a handful of targets
     # this can be vastly improved
-    targets = ["target", "target_nomi_60", "target_jerome_20", "target_alan_20"]
+    targets = ["target", "target_nomi_60", "target_jerome_20"]
 
     # all the possible features to train on
     feature_cols = [c for c in training_data if c.startswith("feature_")]
@@ -134,11 +134,11 @@ if model_selection_loop:
     # fast_mode=True so that we skip some of the stats that are slower to calculate
     training_stats = validation_metrics(training_data, all_model_cols, example_col="preds_model_target",
                                         fast_mode=True)
-    print(training_stats[["mean", "sharpe"]].sort_values(by="mean", ascending=False).to_markdown())
+    print(training_stats[["mean", "sharpe"]].sort_values(by="sharpe", ascending=False).to_markdown())
 
-    # pick the model that has the highest correlation mean
-    best_pred_col = training_stats.sort_values(by="mean", ascending=False).head(1).index[0]
-    print(f"selecting model {best_pred_col} as our highest mean model in validation")
+    # pick the model that has the highest correlation sharpe
+    best_pred_col = training_stats.sort_values(by="sharpe", ascending=False).head(1).index[0]
+    print(f"selecting model {best_pred_col} as our highest sharpe model in validation")
 
     """ Now do a full train"""
     print("entering full training section")
