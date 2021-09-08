@@ -117,7 +117,7 @@ file at https://numer.ai/tournament
 
 - Size: ~14MB CSV
 
-- Contents:
+- Columns:
 
   - "id": string labels of obfuscated stock IDs
 
@@ -136,7 +136,7 @@ file at https://numer.ai/tournament
 
 - Size: ~37MB CSV
 
-- Contents:
+- Columns:
 
   - "id": string labels of obfuscated stock IDs
 
