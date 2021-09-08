@@ -6,7 +6,7 @@ from halo import Halo
 from utils import save_model, load_model, neutralize, get_biggest_change_features, validation_metrics, download_data
 
 
-napi = NumerAPI('V22H76F7UGZXRFHUK7EWRG53TJC34OVW', '6YCUIF523ALJIZE3GKIZU7BROOJRURHZQ3GAAJ4NAZHH7Z5GUWOAQKIY3LNZW753')
+napi = NumerAPI()
 spinner = Halo(text='', spinner='dots')
 
 current_round = napi.get_current_round(tournament=8)  # tournament 8 is the primary Numerai Tournament
