@@ -18,7 +18,7 @@ The official example scripts for the [Numerai](https://numer.ai/) Data Science T
   - [Staking](#staking)
   - [Automation](#automation)
 - [FAQ](#faq)
-- [Help and Discussion](#help-and-discussions)
+- [Help and Discussions](#help-and-discussions)
 
 # Quick Start
 
