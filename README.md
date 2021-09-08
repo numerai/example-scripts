@@ -39,7 +39,8 @@ If the current round is open (Saturday 18:00 UTC through Monday 14:30 UTC), you 
 getting results on live tournament data. You can create your submission by uploading the `tournament_predictions.csv`
 file at https://numer.ai/tournament
 
-![upload-tournament](https://numerai-public-images.s3.us-west-2.amazonaws.com/example-scripts/upload_tournament.gif)
+![upload_tournament](https://user-images.githubusercontent.com/978353/132447832-9369e4c6-e69b-4837-bdc9-db13f9aca537.gif)
+
 
 # Datasets
 
