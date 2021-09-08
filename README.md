@@ -12,13 +12,13 @@ The official example scripts for the [Numerai](https://numer.ai/) Data Science T
 # Contents
 
 - [Quick Start](#quick-start)
-- [Datasets](#data-sets)
+- [Datasets](#datasets)
 - [Next Steps](#next-steps)
   - [Research](#research)
   - [Staking](#staking)
   - [Automation](#automation)
 - [FAQ](#faq)
-- [Help and Discussion](#help-and-discussion)
+- [Help and Discussion](#help-and-discussions)
 
 # Quick Start
 
