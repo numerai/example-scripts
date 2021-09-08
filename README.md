@@ -33,7 +33,7 @@ https://numer.ai/tournament to get model diagnostics.
 > TIP: The example_model.py script takes ~45-60 minutes to run. If you don't want to wait, you can upload
 > `example_diagnostic_predictions.csv` to get diagnostics immediately.
 
-![upload-diagnostics](https://numerai-public-images.s3.us-west-2.amazonaws.com/example-scripts/upload_diagnostics.mp4)
+![upload-diagnostics](https://numerai-public-images.s3.us-west-2.amazonaws.com/example-scripts/ezgif-7-8766e7001be1.gif)
 
 If the current round is open (Saturday 18:00 UTC through Monday 14:30 UTC), you can submit your predictions and start
 getting results on live tournament data. You can create your submission by uploading the `tournament_predictions.csv`
