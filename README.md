@@ -18,7 +18,7 @@ The official example scripts for the [Numerai](https://numer.ai/) Data Science T
   - [Staking](#staking)
   - [Automation](#automation)
 - [FAQ](#faq)
-- [Help and Discussions](#help-and-discussions)
+- [Support](#support)
 
 # Quick Start
 
@@ -203,8 +203,8 @@ The historical portions of the dataset (training_data, validation_data) are rela
 
 The live portion of the dataset (tournament_data) is updated every week and represents the latest state of the global stock market.
 
-# Help and Discussions
+# Support
 
-For help and discussions, connect with us on our [community chat](http://community.numer.ai/) or [forums](https://forum.numer.ai/)
+If you need help or have any questions, please connect with us on our [community chat](http://community.numer.ai/) or [forums](https://forum.numer.ai/).
 
-If something in this repo doesn't work, please [file an issue](https://github.com/numerai/example-scripts/issues)
+If something in this repo doesn't work, please [file an issue](https://github.com/numerai/example-scripts/issues).
