@@ -10,9 +10,9 @@ EXAMPLE_PREDS_COL = "example_preds"
 TARGET_COL = "target"
 ERA_COL = "era"
 # params we'll use to train all of our models.
-# Ideal params would be 2000, 0.001, 6, 2**6, 0.1, but this is slow enough as it is
-model_params = {"n_estimators": 200,
-                "learning_rate": 0.1,
+# Ideal params would be more like 20000, 0.001, 6, 2**6, 0.1, but this is slow enough as it is
+model_params = {"n_estimators": 2000,
+                "learning_rate": 0.01,
                 "max_depth": 5,
                 "num_leaves": 2 ** 5,
                 "colsample_bytree": 0.1}
@@ -20,8 +20,8 @@ model_params = {"n_estimators": 200,
 # the amount of downsampling we'll use to speed up cross validation and full train.
 # a value of 1 means no downsampling
 # a value of 10 means use every 10th row
-downsample_cross_val = 50
-downsample_full_train = 10
+downsample_cross_val = 10
+downsample_full_train = 4
 
 # if model_selection_loop=True get OOS performance for training_data
 # and use that to select best model
@@ -47,17 +47,18 @@ if model_selection_loop:
     pred_cols = set()
 
     # pick some targets to use
-    possible_targets = [c for c in training_data if c.startswith("targets_")]
+    possible_targets = [c for c in training_data.columns if c.startswith("target_")]
     # this code greedily selects the target that is least correlated with all prior selected targets
     print("calculating target correlations")
     target_correlations = training_data.groupby(ERA_COL).apply(lambda d: d[possible_targets+[TARGET_COL]].corr()).mean(level=1)
-    targets = ["target"]
+    targets = [TARGET_COL]
     print("selecting targets to use")
-    desired_targets = 3
+    desired_targets = 5
     for i in range(desired_targets-1):
-        existing_targets_corr_df = target_correlations.loc[:, possible_targets]
+        existing_targets_corr_df = target_correlations.loc[:, targets]
         min_corr_new_target = existing_targets_corr_df.prod(axis=1).idxmin()
         targets.append(min_corr_new_target)
+    print(f"selected targets are {targets}")
 
     # all the possible features to train on
     feature_cols = [c for c in training_data if c.startswith("feature_")]
@@ -69,6 +70,7 @@ if model_selection_loop:
     # optionally downsample training data to speed up this section.
     print("entering time series cross validation loop")
     for split, train_test_split in enumerate(train_test_zip):
+        gc.collect()
         print(f"doing split {split+1} out of {cv}")
         train_split, test_split = train_test_split
         train_split_index = training_data[ERA_COL].isin(train_split)
@@ -114,7 +116,7 @@ if model_selection_loop:
                 neutralizers=riskiest_features_split,
                 proportion=1.0,
                 normalize=True,
-                era_col=ERA_COL)
+                era_col=ERA_COL)[f"preds_{model_name}"]
 
             # remember that we made all of these different pred columns
             pred_cols.add(f"preds_{model_name}")
@@ -156,13 +158,15 @@ if model_selection_loop:
     riskiest_features = get_biggest_change_features(all_feature_corrs, 50)
 
     for target in targets:
+        gc.collect()
         model_name = f"model_{target}"
         model = load_model(model_name)
         if not model:
             print(f"training {model_name}")
             model = LGBMRegressor(**model_params)
             # train on all of train, predict on val, predict on tournament
-            model.fit(training_data.loc[:, feature_cols], training_data[target])
+            model.fit(training_data.iloc[::downsample_full_train].loc[:, feature_cols],
+                      training_data.iloc[::downsample_full_train][target])
             save_model(model, model_name)
         gc.collect()
 
@@ -183,6 +187,7 @@ else:
 
 
 """ Things that we always do even if we've already trained """
+gc.collect()
 print("downloading tournament_data")
 download_data(napi, 'numerai_tournament_data.parquet', f'numerai_tournament_data_{current_round}.parquet',
               round=current_round)
@@ -222,6 +227,7 @@ else:
 pred_cols = set()
 ensemble_cols = set()
 for target in targets:
+    gc.collect()
     model_name = f"model_{target}"
     print(f"loading {model_name}")
     model = load_model(model_name)
@@ -243,13 +249,13 @@ for target in targets:
                                                                             neutralizers=riskiest_features,
                                                                             proportion=1.0,
                                                                             normalize=True,
-                                                                            era_col=ERA_COL)
+                                                                            era_col=ERA_COL)[f"preds_{model_name}"]
     tournament_data[f"preds_{model_name}_neutral_riskiest_50"] = neutralize(df=tournament_data,
                                                                             columns=[f"preds_{model_name}"],
                                                                             neutralizers=riskiest_features,
                                                                             proportion=1.0,
                                                                             normalize=True,
-                                                                            era_col=ERA_COL)
+                                                                            era_col=ERA_COL)[f"preds_{model_name}"]
 
     pred_cols.add(f"preds_{model_name}")
     pred_cols.add(f"preds_{model_name}_neutral_riskiest_50")
@@ -277,6 +283,7 @@ ensemble_cols.add("ensemble_neutral_riskiest_50")
 ensemble_cols.add("ensemble_not_neutral")
 ensemble_cols.add("ensemble_all")
 
+gc.collect()
 print("getting final validation stats")
 # get our final validation stats for our chosen model
 validation_stats = validation_metrics(validation_data, [best_pred_col], example_col=EXAMPLE_PREDS_COL,

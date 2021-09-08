@@ -192,7 +192,6 @@ def validation_metrics(validation_data, pred_cols, example_col, fast_mode=False)
     feature_cols = [c for c in validation_data if c.startswith("feature_")]
     for pred_col in pred_cols:
         # Check the per-era correlations on the validation set (out of sample)
-        spinner.start('Calculating correlations')
         validation_correlations = validation_data.groupby(ERA_COL).apply(
             lambda d: unif(d[pred_col]).corr(d[TARGET_COL]))
 
@@ -207,16 +206,13 @@ def validation_metrics(validation_data, pred_cols, example_col, fast_mode=False)
         validation_stats.loc["sharpe", pred_col] = sharpe
         validation_stats.loc["adj_sharpe", pred_col] = adj_sharpe
         validation_stats.loc["autocorr", pred_col] = autocorr
-        spinner.succeed()
 
-        spinner.start('Calculating max drawdown')
         rolling_max = (validation_correlations + 1).cumprod().rolling(window=9000,  # arbitrarily large
                                                                       min_periods=1).max()
         daily_value = (validation_correlations + 1).cumprod()
         max_drawdown = -((rolling_max - daily_value) / rolling_max).max()
         validation_stats.loc["max_drawdown", pred_col] = max_drawdown
 
-        spinner.start('Calculating APY')
         payout_scores = validation_correlations.clip(-0.25, 0.25)
         payout_daily_value = (payout_scores + 1).cumprod()
 
@@ -233,21 +229,16 @@ def validation_metrics(validation_data, pred_cols, example_col, fast_mode=False)
 
         if not fast_mode:
             # Check the feature exposure of your validation predictions
-            spinner.start('Calculating feature exposure')
             max_per_era = validation_data.groupby(ERA_COL).apply(
                 lambda d: d[feature_cols].corrwith(d[pred_col]).abs().max())
             max_feature_exposure = max_per_era.mean()
             validation_stats.loc["max_feature_exposure", pred_col] = max_feature_exposure
-            spinner.succeed()
 
             # Check feature neutral mean
-            spinner.start('Calculating feature neutral mean')
             feature_neutral_mean = get_feature_neutral_mean(validation_data, pred_col)
             validation_stats.loc["feature_neutral_mean", pred_col] = feature_neutral_mean
-            spinner.succeed()
 
             # Check top and bottom 200 metrics (TB200)
-            spinner.start('Calculating TB200 correlations')
             tb200_validation_correlations = fast_score_by_date(
                 validation_data,
                 [pred_col],
@@ -267,9 +258,7 @@ def validation_metrics(validation_data, pred_cols, example_col, fast_mode=False)
             validation_stats.loc["tb200_sharpe", pred_col] = tb200_sharpe
             validation_stats.loc["tb200_adj_sharpe", pred_col] = tb200_adj_sharpe
             validation_stats.loc["tb200_autocorr", pred_col] = tb200_autocorr
-            spinner.succeed()
 
-        spinner.start('Calculating MMC stats')
         print("calculating MMC stats...")
         # MMC over validation
         mmc_scores = []
@@ -286,14 +275,11 @@ def validation_metrics(validation_data, pred_cols, example_col, fast_mode=False)
 
         validation_stats.loc["mmc_mean", pred_col] = val_mmc_mean
         validation_stats.loc["corr_plus_mmc_sharpe", pred_col] = corr_plus_mmc_sharpe
-        spinner.succeed()
 
-        spinner.start('Calculating correlation with example predictions')
         # Check correlation with example predictions
         per_era_corrs = validation_data.groupby(ERA_COL).apply(lambda d: unif(d[pred_col]).corr(unif(d["example_preds"])))
         corr_with_example_preds = per_era_corrs.mean()
         validation_stats.loc["corr_with_example_preds", pred_col] = corr_with_example_preds
-        spinner.succeed()
 
     # .transpose so that stats are columns and the model_name is the row
     return validation_stats.transpose()
