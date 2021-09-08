@@ -1,5 +1,4 @@
 import os
-import logging
 import requests
 import numpy as np
 import pandas as pd
@@ -7,9 +6,11 @@ import scipy
 from halo import Halo
 from pathlib import Path
 import json
+from scipy.stats import skew, kurtosis
 
 ERA_COL = "era"
 TARGET_COL = "target"
+spinner = Halo(text='', spinner='dots')
 
 MODEL_FOLDER = "models"
 MODEL_CONFIGS_FOLDER = "model_configs"
@@ -148,71 +149,158 @@ def get_feature_neutral_mean(df, prediction_col):
     return np.mean(scores)
 
 
+def fast_score_by_date(df, columns, target, tb=None, era_col="era"):
+    unique_eras = df[era_col].unique()
+    computed = []
+    for u in unique_eras:
+        df_era = df[df[era_col] == u]
+        era_pred = np.float64(df_era[columns].values.T)
+        era_target = np.float64(df_era[target].values.T)
+
+        if tb is None:
+            ccs = np.corrcoef(era_target, era_pred)[0, 1:]
+        else:
+            tbidx = np.argsort(era_pred, axis=1)
+            tbidx = np.concatenate([tbidx[:, :tb], tbidx[:, -tb:]], axis=1)
+            ccs = [np.corrcoef(era_target[tmpidx], tmppred[tmpidx])[0, 1] for tmpidx, tmppred in zip(tbidx, era_pred)]
+            ccs = np.array(ccs)
+
+        computed.append(ccs)
+
+    return pd.DataFrame(np.array(computed), columns=columns, index=df[era_col].unique())
+
+
+def annual_sharpe(x):
+    return ((np.mean(x) - 0.010415154) / np.std(x)) * np.sqrt(12)
+
+
+def adjusted_sharpe(x):
+    return annual_sharpe(x) * (
+        1
+        + ((skew(x) / 6) * annual_sharpe(x))
+        - ((kurtosis(x) - 3) / 24)
+        * (annual_sharpe(x) ** 2)
+    )
+
+
+def autocorrelation(x):
+    return np.corrcoef(x[:-1], x[1:])[0,1]
+
+
 def validation_metrics(validation_data, pred_cols, example_col, fast_mode=False):
     validation_stats = pd.DataFrame()
     feature_cols = [c for c in validation_data if c.startswith("feature_")]
     for pred_col in pred_cols:
-        print(f"Doing validation metrics on: {pred_col}")
         # Check the per-era correlations on the validation set (out of sample)
-        with Halo(text='Calculating correlations', spinner='dots'):
-            validation_correlations = validation_data.groupby(ERA_COL).apply(
-                lambda d: unif(d[pred_col]).corr(d[TARGET_COL]))
-            mean = validation_correlations.mean()
-            std = validation_correlations.std(ddof=0)
-            sharpe = mean / std
-            validation_stats.loc["mean", pred_col] = mean
-            validation_stats.loc["std", pred_col] = std
-            validation_stats.loc["sharpe", pred_col] = sharpe
+        spinner.start('Calculating correlations')
+        validation_correlations = validation_data.groupby(ERA_COL).apply(
+            lambda d: unif(d[pred_col]).corr(d[TARGET_COL]))
 
-        with Halo(text='Calculating max drawdown', spinner='dots'):
-            rolling_max = (validation_correlations + 1).cumprod().rolling(window=9000,  # arbitrarily large
-                                                                          min_periods=1).max()
-            daily_value = (validation_correlations + 1).cumprod()
-            max_drawdown = -((rolling_max - daily_value) / rolling_max).max()
-            validation_stats.loc["max_drawdown", pred_col] = max_drawdown
+        mean = validation_correlations.mean()
+        std = validation_correlations.std(ddof=0)
+        sharpe = mean / std
+        adj_sharpe = adjusted_sharpe(validation_correlations)
+        autocorr = autocorrelation(validation_correlations)
+
+        validation_stats.loc["mean", pred_col] = mean
+        validation_stats.loc["std", pred_col] = std
+        validation_stats.loc["sharpe", pred_col] = sharpe
+        validation_stats.loc["adj_sharpe", pred_col] = adj_sharpe
+        validation_stats.loc["autocorr", pred_col] = autocorr
+        spinner.succeed()
+
+        spinner.start('Calculating max drawdown')
+        rolling_max = (validation_correlations + 1).cumprod().rolling(window=9000,  # arbitrarily large
+                                                                      min_periods=1).max()
+        daily_value = (validation_correlations + 1).cumprod()
+        max_drawdown = -((rolling_max - daily_value) / rolling_max).max()
+        validation_stats.loc["max_drawdown", pred_col] = max_drawdown
+
+        spinner.start('Calculating APY')
+        payout_scores = validation_correlations.clip(-0.25, 0.25)
+        payout_daily_value = (payout_scores + 1).cumprod()
+
+        apy = (
+            (
+                (payout_daily_value.dropna().iloc[-1])
+                ** (1 / len(payout_scores))
+            )
+            ** 49  # 52 weeks of compounding minus 3 for stake compounding lag
+            - 1
+        ) * 100
+
+        validation_stats.loc["apy", pred_col] = apy
 
         if not fast_mode:
             # Check the feature exposure of your validation predictions
-            with Halo(text='Calculating feature exposure', spinner='dots'):
-                max_per_era = validation_data.groupby(ERA_COL).apply(
-                    lambda d: d[feature_cols].corrwith(d[pred_col]).abs().max())
-                max_feature_exposure = max_per_era.mean()
-                validation_stats.loc["max_feature_exposure", pred_col] = max_feature_exposure
+            spinner.start('Calculating feature exposure')
+            max_per_era = validation_data.groupby(ERA_COL).apply(
+                lambda d: d[feature_cols].corrwith(d[pred_col]).abs().max())
+            max_feature_exposure = max_per_era.mean()
+            validation_stats.loc["max_feature_exposure", pred_col] = max_feature_exposure
+            spinner.succeed()
 
             # Check feature neutral mean
-            with Halo(text='Calculating feature neutral mean', spinner='dots'):
-                feature_neutral_mean = get_feature_neutral_mean(validation_data, pred_col)
-                validation_stats.loc["feature_neutral_mean", pred_col] = feature_neutral_mean
+            spinner.start('Calculating feature neutral mean')
+            feature_neutral_mean = get_feature_neutral_mean(validation_data, pred_col)
+            validation_stats.loc["feature_neutral_mean", pred_col] = feature_neutral_mean
+            spinner.succeed()
 
-        with Halo(text='Calculating MMC stats', spinner='dots'):
-            print("calculating MMC stats...")
-            # MMC over validation
-            mmc_scores = []
-            corr_scores = []
-            for _, x in validation_data.groupby(ERA_COL):
-                series = neutralize_series(unif(x[pred_col]), (x[example_col]))
-                mmc_scores.append(np.cov(series, x[TARGET_COL])[0, 1] / (0.29 ** 2))
-                corr_scores.append(unif(x[pred_col]).corr(x[TARGET_COL]))
+            # Check top and bottom 200 metrics (TB200)
+            spinner.start('Calculating TB200 correlations')
+            tb200_validation_correlations = fast_score_by_date(
+                validation_data,
+                [pred_col],
+                TARGET_COL,
+                tb=200,
+                era_col=ERA_COL
+            )
 
-            val_mmc_mean = np.mean(mmc_scores)
-            val_mmc_std = np.std(mmc_scores)
-            corr_plus_mmcs = [c + m for c, m in zip(corr_scores, mmc_scores)]
-            corr_plus_mmc_sharpe = np.mean(corr_plus_mmcs) / np.std(corr_plus_mmcs)
+            tb200_mean = tb200_validation_correlations.mean()
+            tb200_std = tb200_validation_correlations.std(ddof=0)
+            tb200_sharpe = mean / std
+            tb200_adj_sharpe = adjusted_sharpe(validation_correlations)
+            tb200_autocorr = autocorrelation(validation_correlations)
 
-            validation_stats.loc["mmc_mean", pred_col] = val_mmc_mean
-            validation_stats.loc["corr_plus_mmc_sharpe", pred_col] = corr_plus_mmc_sharpe
+            validation_stats.loc["tb200_mean", pred_col] = tb200_mean
+            validation_stats.loc["tb200_std", pred_col] = tb200_std
+            validation_stats.loc["tb200_sharpe", pred_col] = tb200_sharpe
+            validation_stats.loc["tb200_adj_sharpe", pred_col] = tb200_adj_sharpe
+            validation_stats.loc["tb200_autocorr", pred_col] = tb200_autocorr
+            spinner.succeed()
 
-        with Halo(text='Calculating correlation with example predictions', spinner='dots'):
-            # Check correlation with example predictions
-            per_era_corrs = validation_data.groupby(ERA_COL).apply(lambda d: unif(d[pred_col]).corr(unif(d["example_preds"])))
-            corr_with_example_preds = per_era_corrs.mean()
-            validation_stats.loc["corr_with_example_preds", pred_col] = corr_with_example_preds
+        spinner.start('Calculating MMC stats')
+        print("calculating MMC stats...")
+        # MMC over validation
+        mmc_scores = []
+        corr_scores = []
+        for _, x in validation_data.groupby(ERA_COL):
+            series = neutralize_series(unif(x[pred_col]), (x[example_col]))
+            mmc_scores.append(np.cov(series, x[TARGET_COL])[0, 1] / (0.29 ** 2))
+            corr_scores.append(unif(x[pred_col]).corr(x[TARGET_COL]))
+
+        val_mmc_mean = np.mean(mmc_scores)
+        val_mmc_std = np.std(mmc_scores)
+        corr_plus_mmcs = [c + m for c, m in zip(corr_scores, mmc_scores)]
+        corr_plus_mmc_sharpe = np.mean(corr_plus_mmcs) / np.std(corr_plus_mmcs)
+
+        validation_stats.loc["mmc_mean", pred_col] = val_mmc_mean
+        validation_stats.loc["corr_plus_mmc_sharpe", pred_col] = corr_plus_mmc_sharpe
+        spinner.succeed()
+
+        spinner.start('Calculating correlation with example predictions')
+        # Check correlation with example predictions
+        per_era_corrs = validation_data.groupby(ERA_COL).apply(lambda d: unif(d[pred_col]).corr(unif(d["example_preds"])))
+        corr_with_example_preds = per_era_corrs.mean()
+        validation_stats.loc["corr_with_example_preds", pred_col] = corr_with_example_preds
+        spinner.succeed()
 
     # .transpose so that stats are columns and the model_name is the row
     return validation_stats.transpose()
 
 
 def download_file(url: str, dest_path: str, show_progress_bars: bool = True):
+
     req = requests.get(url, stream=True)
     req.raise_for_status()
 
@@ -220,11 +308,9 @@ def download_file(url: str, dest_path: str, show_progress_bars: bool = True):
     total_size = int(req.headers.get('content-length', 0))
 
     if os.path.exists(dest_path):
-        logging.info("target file already exists")
         file_size = os.stat(dest_path).st_size  # File size in bytes
         if file_size < total_size:
             # Download incomplete
-            logging.info("resuming download")
             resume_header = {'Range': 'bytes=%d-' % file_size}
             req = requests.get(url, headers=resume_header, stream=True,
                                verify=False, allow_redirects=True)
@@ -233,12 +319,8 @@ def download_file(url: str, dest_path: str, show_progress_bars: bool = True):
             return
         else:
             # Error, delete file and restart download
-            logging.error("deleting file and restarting")
             os.remove(dest_path)
             file_size = 0
-    else:
-        # File does not exist, starting download
-        logging.info("starting download")
 
     with open(dest_path, "ab") as dest_file:
         for chunk in req.iter_content(1024):
@@ -246,6 +328,7 @@ def download_file(url: str, dest_path: str, show_progress_bars: bool = True):
 
 
 def download_data(napi, filename, dest_path, round=None):
+    spinner.start(f'Downloading {dest_path}')
     query = """
             query ($filename: String!) {
                 dataset(filename: $filename)
@@ -263,4 +346,5 @@ def download_data(napi, filename, dest_path, round=None):
         params['round'] = round
     dataset_url = napi.raw_query(query, params, authorization=True)['data']['dataset']
     download_file(dataset_url, dest_path, show_progress_bars=True)
+    spinner.succeed()
     return dataset_url

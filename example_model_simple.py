@@ -7,33 +7,26 @@ from utils import save_model, load_model, neutralize, get_biggest_change_feature
 
 
 napi = NumerAPI()
+spinner = Halo(text='', spinner='dots')
 
 current_round = napi.get_current_round(tournament=8)  # tournament 8 is the primary Numerai Tournament
 
 # read in all of the new datas
 # tournament data and example predictions change every week so we specify the round in their names
 # training and validation data only change periodically, so no need to download them over again every single week
-with Halo(text='Downloading training data', spinner='dots'):
-    download_data(napi, 'numerai_training_data.parquet', 'numerai_training_data.parquet', round=current_round)
+download_data(napi, 'numerai_training_data.parquet', 'numerai_training_data.parquet', round=current_round)
+download_data(napi, 'numerai_tournament_data.parquet', f'numerai_tournament_data_{current_round}.parquet', round=current_round)
+download_data(napi, 'numerai_validation_data.parquet', 'numerai_validation_data.parquet', round=current_round)
+download_data(napi, 'example_predictions.parquet', f'example_predictions_{current_round}.parquet', round=current_round)
+download_data(napi, 'example_validation_predictions.parquet', f'example_validation_predictions.parquet', round=current_round)
 
-with Halo(text='Downloading tournament data', spinner='dots'):
-    download_data(napi, 'numerai_tournament_data.parquet', f'numerai_tournament_data_{current_round}.parquet', round=current_round)
-
-with Halo(text='Downloading validation data', spinner='dots'):
-    download_data(napi, 'numerai_validation_data.parquet', 'numerai_validation_data.parquet', round=current_round)
-
-with Halo(text='Downloading example tournament preds', spinner='dots'):
-    download_data(napi, 'example_predictions.parquet', f'example_predictions_{current_round}.parquet', round=current_round)
-
-with Halo(text='Downloading example validation preds', spinner='dots'):
-    download_data(napi, 'example_validation_predictions.parquet', f'example_validation_predictions.parquet', round=current_round)
-
-with Halo(text='Reading parquet data', spinner='dots'):
-    training_data = pd.read_parquet('numerai_training_data.parquet')
-    tournament_data = pd.read_parquet(f'numerai_tournament_data_{current_round}.parquet')
-    validation_data = pd.read_parquet('numerai_validation_data.parquet')
-    example_preds = pd.read_parquet(f'example_predictions_{current_round}.parquet')
-    validation_preds = pd.read_parquet('example_validation_predictions.parquet')
+spinner.start('Reading parquet data')
+training_data = pd.read_parquet('numerai_training_data.parquet')
+tournament_data = pd.read_parquet(f'numerai_tournament_data_{current_round}.parquet')
+validation_data = pd.read_parquet('numerai_validation_data.parquet')
+example_preds = pd.read_parquet(f'example_predictions_{current_round}.parquet')
+validation_preds = pd.read_parquet('example_validation_predictions.parquet')
+spinner.succeed()
 
 EXAMPLE_PREDS_COL = "example_preds"
 validation_data[EXAMPLE_PREDS_COL] = validation_preds["prediction"]
@@ -60,10 +53,11 @@ if not model:
     model = LGBMRegressor(**params)
 
     # train on all of train, predict on val, predict on tournament, save the model so we don't have to train next time
-    with Halo(text='Training model', spinner='dots'):
-        model.fit(training_data.loc[:, feature_cols], training_data[TARGET_COL])
-        print(f"saving new model: {model_name}")
-        save_model(model, model_name)
+    spinner.start('Training model')
+    model.fit(training_data.loc[:, feature_cols], training_data[TARGET_COL])
+    print(f"saving new model: {model_name}")
+    save_model(model, model_name)
+    spinner.succeed()
 
 # check for nans and fill nans
 if tournament_data.loc[tournament_data["data_type"] == "live", feature_cols].isna().sum().sum():
@@ -77,37 +71,38 @@ else:
     print("No nans in the features this week!")
 
 # predict on the latest data!
-with Halo(text='Predicting on latest data', spinner='dots'):
-    # double check the feature that the model expects vs what is available
-    # this prevents our pipeline from failing if Numerai adds more data and we don't have time to retrain!
-    model_expected_features = model.booster_.feature_name()
-    if set(model_expected_features) != set(feature_cols):
-        print(f"New features are available! Might want to retrain model {model_name}.")
-    print(f"\npredicting for model {model_name}")
-    validation_data.loc[:, f"preds_{model_name}"] = model.predict(validation_data.loc[:, model_expected_features])
-    tournament_data.loc[:, f"preds_{model_name}"] = model.predict(tournament_data.loc[:, model_expected_features])
+spinner.start('Predicting on latest data')
+# double check the feature that the model expects vs what is available
+# this prevents our pipeline from failing if Numerai adds more data and we don't have time to retrain!
+model_expected_features = model.booster_.feature_name()
+if set(model_expected_features) != set(feature_cols):
+    print(f"New features are available! Might want to retrain model {model_name}.")
+validation_data.loc[:, f"preds_{model_name}"] = model.predict(validation_data.loc[:, model_expected_features])
+tournament_data.loc[:, f"preds_{model_name}"] = model.predict(tournament_data.loc[:, model_expected_features])
+spinner.succeed()
 
+spinner.start('Neutralizing to risky features')
 # getting the per era correlation of each feature vs the target
 all_feature_corrs = training_data.groupby(ERA_COL).apply(lambda d: d[feature_cols].corrwith(d[TARGET_COL]))
 
 # find the riskiest features by comparing their correlation vs the target in half 1 and half 2 of training data
 riskiest_features = get_biggest_change_features(all_feature_corrs, 50)
 
-with Halo(text='Neutralizing to risky features', spinner='dots'):
-    # neutralize our predictions to the riskiest features
-    validation_data[f"preds_{model_name}_neutral_riskiest_50"] = neutralize(df=validation_data,
-                                                                            columns=[f"preds_{model_name}"],
-                                                                            neutralizers=riskiest_features,
-                                                                            proportion=1.0,
-                                                                            normalize=True,
-                                                                            era_col=ERA_COL)
+# neutralize our predictions to the riskiest features
+validation_data[f"preds_{model_name}_neutral_riskiest_50"] = neutralize(df=validation_data,
+                                                                        columns=[f"preds_{model_name}"],
+                                                                        neutralizers=riskiest_features,
+                                                                        proportion=1.0,
+                                                                        normalize=True,
+                                                                        era_col=ERA_COL)
 
-    tournament_data[f"preds_{model_name}_neutral_riskiest_50"] = neutralize(df=tournament_data,
-                                                                            columns=[f"preds_{model_name}"],
-                                                                            neutralizers=riskiest_features,
-                                                                            proportion=1.0,
-                                                                            normalize=True,
-                                                                            era_col=ERA_COL)
+tournament_data[f"preds_{model_name}_neutral_riskiest_50"] = neutralize(df=tournament_data,
+                                                                        columns=[f"preds_{model_name}"],
+                                                                        neutralizers=riskiest_features,
+                                                                        proportion=1.0,
+                                                                        normalize=True,
+                                                                        era_col=ERA_COL)
+spinner.succeed()
 
 
 model_to_submit = f"preds_{model_name}_neutral_riskiest_50"
