@@ -170,23 +170,6 @@ def fast_score_by_date(df, columns, target, tb=None, era_col="era"):
     return pd.DataFrame(np.array(computed), columns=columns, index=df[era_col].unique())
 
 
-def annual_sharpe(x):
-    return ((np.mean(x) - 0.010415154) / np.std(x)) * np.sqrt(12)
-
-
-def adjusted_sharpe(x):
-    return annual_sharpe(x) * (
-        1
-        + ((skew(x) / 6) * annual_sharpe(x))
-        - ((kurtosis(x) - 3) / 24)
-        * (annual_sharpe(x) ** 2)
-    )
-
-
-def autocorrelation(x):
-    return np.corrcoef(x[:-1], x[1:])[0,1]
-
-
 def validation_metrics(validation_data, pred_cols, example_col, fast_mode=False):
     validation_stats = pd.DataFrame()
     feature_cols = [c for c in validation_data if c.startswith("feature_")]
@@ -198,14 +181,10 @@ def validation_metrics(validation_data, pred_cols, example_col, fast_mode=False)
         mean = validation_correlations.mean()
         std = validation_correlations.std(ddof=0)
         sharpe = mean / std
-        adj_sharpe = adjusted_sharpe(validation_correlations)
-        autocorr = autocorrelation(validation_correlations)
 
         validation_stats.loc["mean", pred_col] = mean
         validation_stats.loc["std", pred_col] = std
         validation_stats.loc["sharpe", pred_col] = sharpe
-        validation_stats.loc["adj_sharpe", pred_col] = adj_sharpe
-        validation_stats.loc["autocorr", pred_col] = autocorr
 
         rolling_max = (validation_correlations + 1).cumprod().rolling(window=9000,  # arbitrarily large
                                                                       min_periods=1).max()
@@ -247,17 +226,13 @@ def validation_metrics(validation_data, pred_cols, example_col, fast_mode=False)
                 era_col=ERA_COL
             )
 
-            tb200_mean = tb200_validation_correlations.mean()
-            tb200_std = tb200_validation_correlations.std(ddof=0)
+            tb200_mean = tb200_validation_correlations.mean()[pred_col]
+            tb200_std = tb200_validation_correlations.std(ddof=0)[pred_col]
             tb200_sharpe = mean / std
-            tb200_adj_sharpe = adjusted_sharpe(validation_correlations)
-            tb200_autocorr = autocorrelation(validation_correlations)
 
             validation_stats.loc["tb200_mean", pred_col] = tb200_mean
             validation_stats.loc["tb200_std", pred_col] = tb200_std
             validation_stats.loc["tb200_sharpe", pred_col] = tb200_sharpe
-            validation_stats.loc["tb200_adj_sharpe", pred_col] = tb200_adj_sharpe
-            validation_stats.loc["tb200_autocorr", pred_col] = tb200_autocorr
 
         # MMC over validation
         mmc_scores = []
@@ -282,6 +257,7 @@ def validation_metrics(validation_data, pred_cols, example_col, fast_mode=False)
 
     # .transpose so that stats are columns and the model_name is the row
     return validation_stats.transpose()
+
 
 
 def download_file(url: str, dest_path: str, show_progress_bars: bool = True):
