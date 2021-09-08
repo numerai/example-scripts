@@ -6,22 +6,43 @@ import pandas as pd
 import scipy
 from halo import Halo
 from pathlib import Path
+import json
 
 ERA_COL = "era"
 TARGET_COL = "target"
 
+MODEL_FOLDER = "models"
+MODEL_CONFIGS_FOLDER = "model_configs"
+PREDICTION_FILES_FOLDER = "prediction_files"
+
 
 def save_model(model, name):
-    pd.to_pickle(model, f"{name}.pkl")
+    pd.to_pickle(model, f"{MODEL_FOLDER}/{name}.pkl")
 
 
 def load_model(name):
-    path = Path(f"{name}.pkl")
+    path = Path(f"{MODEL_FOLDER}/{name}.pkl")
     if path.is_file():
-        model = pd.read_pickle(f"{name}.pkl")
+        model = pd.read_pickle(f"{MODEL_FOLDER}/{name}.pkl")
     else:
         model = False
     return model
+
+
+def save_model_config(model_config, model_name):
+    with open(f"{MODEL_CONFIGS_FOLDER}/{model_name}.json", 'w') as fp:
+        json.dump(model_config, fp)
+
+
+def load_model_config(model_name):
+    path_str = f"{MODEL_CONFIGS_FOLDER}/{model_name}.json"
+    path = Path(path_str)
+    if path.is_file():
+        with open(path_str, 'r') as fp:
+            model_config = json.load(fp)
+    else:
+        model_config = False
+    return model_config
 
 
 def get_biggest_change_features(corrs, n):
@@ -35,6 +56,32 @@ def get_biggest_change_features(corrs, n):
     corr_diffs = h2_corr_means - h1_corr_means
     worst_n = corr_diffs.abs().sort_values(ascending=False).head(n).index.tolist()
     return worst_n
+
+
+def get_time_series_cross_val_splits(data, cv, embargo):
+    all_train_eras = data[ERA_COL].unique()
+    cv = 3
+    len_split = len(all_train_eras) // 3
+    test_splits = [all_train_eras[i * len_split:(i + 1) * len_split] for i in range(cv)]
+    # fix the last test split to have all the last eras, in case the number of eras wasn't divisible by cv
+    test_splits[-1] = np.append(test_splits[-1], all_train_eras[-1])
+
+    train_splits = []
+    for test_split in test_splits:
+        test_split_max = int(np.max(test_split))
+        test_split_min = int(np.min(test_split))
+        # get all of the eras that aren't in the test split
+        train_split_not_embargoed = [e for e in all_train_eras if not (test_split_min <= int(e) <= test_split_max)]
+        # embargo the train split so we have no leakage.
+        # one era is length 5, so we need to embargo by target_length/5 eras.
+        # To be consistent for all targets, let's embargo everything by 60/5 == 12 eras.
+        train_split = [e for e in train_split_not_embargoed if
+                       abs(int(e) - test_split_max) > 12 and abs(int(e) - test_split_min) > 12]
+        train_splits.append(train_split)
+
+    # convenient way to iterate over train and test splits
+    train_test_zip = zip(train_splits, test_splits)
+    return train_test_zip
 
 
 def neutralize(df,
