@@ -50,7 +50,7 @@ if model_selection_loop:
     possible_targets = [c for c in training_data.columns if c.startswith("target_")]
     # randomly pick a handful of targets
     # this can be vastly improved
-    targets = ["target", "target_nomi_60", "target_jerome_20", "target_alan_20"]
+    targets = ["target", "target_nomi_60", "target_jerome_20"]
 
     # all the possible features to train on
     feature_cols = [c for c in training_data if c.startswith("feature_")]
