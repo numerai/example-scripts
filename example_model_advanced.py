@@ -20,8 +20,8 @@ model_params = {"n_estimators": 2000,
 # the amount of downsampling we'll use to speed up cross validation and full train.
 # a value of 1 means no downsampling
 # a value of 10 means use every 10th row
-downsample_cross_val = 40
-downsample_full_train = 4
+downsample_cross_val = 20
+downsample_full_train = 1
 
 # if model_selection_loop=True get OOS performance for training_data
 # and use that to select best model
