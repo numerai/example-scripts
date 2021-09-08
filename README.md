@@ -33,23 +33,14 @@ https://numer.ai/tournament to get model diagnostics.
 > TIP: The example_model.py script takes ~45-60 minutes to run. If you don't want to wait, you can upload
 > `example_diagnostic_predictions.csv` to get diagnostics immediately.
 
-
 ![upload_diagnostics](https://user-images.githubusercontent.com/978353/132552583-26e0f77c-b81b-47d6-96ed-3242bdb00c4f.gif)
 
-
-
 If the current round is open (Saturday 18:00 UTC through Monday 14:30 UTC), you can submit your predictions and start
-getting results on live tournament data. You can create your submission by uploading the `example_predictions.csv` or 
+getting results on live tournament data. You can create your submission by uploading the `example_predictions.csv` or
 generated `tournament_predictions.csv`
 file at https://numer.ai/tournament
 
-
-
 ![upload_predictions](https://user-images.githubusercontent.com/978353/132553658-73b2a1ed-ac80-4900-949b-c9102085292c.gif)
-
-
-
-
 
 # Datasets
 
@@ -95,7 +86,7 @@ file at https://numer.ai/tournament
 
   - "target": floating-point numbers, the relative performance of that stock during that era
 
-- Notes: It is highly recommended that you do not train on the validation set.
+- Notes: It is highly recommended that you do not train on the validation set. This dataset is used to generate all validation metrics in the diagnostics API.
 
 ### numerai_tournament_data
 
@@ -134,9 +125,7 @@ file at https://numer.ai/tournament
   - "prediction": floating-point numbers between 0 and 1 (exclusive)
 
 - Notes: Useful for ensuring you can get diagnostics and debugging your prediction
-  file if you receive an error from the diagnostics API. This is what your uploads
-  should look like when using the diagnostics section under a model's "More" dropdown
-  in the [models page](numer.ai/models).
+  file if you receive an error from the diagnostics API. This is what your uploads to diagnostics should look like (same ids and data types).
 
 ### example_predictions
 
