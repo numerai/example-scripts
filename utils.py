@@ -18,6 +18,10 @@ PREDICTION_FILES_FOLDER = "prediction_files"
 
 
 def save_model(model, name):
+    try:
+        Path(MODEL_FOLDER).mkdir(exist_ok=True, parents=True)
+    except Exception as ex:
+        pass
     pd.to_pickle(model, f"{MODEL_FOLDER}/{name}.pkl")
 
 
@@ -31,6 +35,10 @@ def load_model(name):
 
 
 def save_model_config(model_config, model_name):
+    try:
+        Path(MODEL_CONFIGS_FOLDER).mkdir(exist_ok=True, parents=True)
+    except Exception as ex:
+        pass
     with open(f"{MODEL_CONFIGS_FOLDER}/{model_name}.json", 'w') as fp:
         json.dump(model_config, fp)
 
@@ -305,7 +313,7 @@ def download_data(napi, filename, dest_path, round=None):
                     }
                     """
         params['round'] = round
-    dataset_url = napi.raw_query(query, params, authorization=True)['data']['dataset']
+    dataset_url = napi.raw_query(query, params)['data']['dataset']
     download_file(dataset_url, dest_path, show_progress_bars=True)
     spinner.succeed()
     return dataset_url
