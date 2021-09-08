@@ -149,9 +149,9 @@ file at https://numer.ai/tournament
 
 ## Research
 
-The example model is a good baseline model, but we can do much better. Check out example_model_advanced for the best model made by Numerai's internal research team (takes 2~3 hours to run!).
+The example model is a good baseline model, but we can do much better. Check out example_model_advanced for the best model made by Numerai's internal research team (takes 2~3 hours to run!) and learn more about the underlying concepts used to construct the advanced example model in the analysis_and_tips notebook.
 
-To learn more about the underlying concepts used to construct the advanced example model, check out the analysis_and_tips notebook.
+Check out the [forums](https://forum.numer.ai/) for in depth discussions on model research.
 
 ## Staking
 
