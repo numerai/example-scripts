@@ -34,9 +34,7 @@ https://numer.ai/tournament to get model diagnostics.
 > `example_diagnostic_predictions.csv` to get diagnostics immediately.
 
 
-
-https://user-images.githubusercontent.com/978353/132447921-9b1fcf58-1044-4cb1-a08e-e0dc326c938c.mp4
-
+https://user-images.githubusercontent.com/978353/132535852-8607f333-714d-42e2-8838-d7574e2b8034.mp4
 
 
 If the current round is open (Saturday 18:00 UTC through Monday 14:30 UTC), you can submit your predictions and start
