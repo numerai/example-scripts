@@ -115,6 +115,9 @@ if model_selection_loop:
             pred_cols.add(f"preds_{model_name}_neutral_riskiest_50")
 
         print("creating ensembles")
+        # ranking per era for all of our pred cols so we can combine safely on the same scales
+        training_data[list(pred_cols)] = training_data.groupby(ERA_COL).apply(
+            lambda d: d[list(pred_cols)].rank(pct=True))
         # do ensembles
         training_data["ensemble_neutral_riskiest_50"] = sum(
             [training_data[pred_col] for pred_col in pred_cols if pred_col.endswith("neutral_riskiest_50")]).rank(
@@ -220,7 +223,7 @@ pred_cols = set()
 ensemble_cols = set()
 for target in targets:
     gc.collect()
-    model_name = f"model_{target}"
+    model_name = f"model_{target}_downsample{downsample_full_train}"
     print(f"loading {model_name}")
     model = load_model(model_name)
     if not model:
@@ -252,6 +255,10 @@ for target in targets:
     pred_cols.add(f"preds_{model_name}")
     pred_cols.add(f"preds_{model_name}_neutral_riskiest_50")
 
+
+# rank per era for each prediction column so that we can combine safely
+validation_data[list(pred_cols)] = validation_data.groupby(ERA_COL).apply(lambda d: d[list(pred_cols)].rank(pct=True))
+tournament_data[list(pred_cols)] = tournament_data.groupby(ERA_COL).apply(lambda d: d[list(pred_cols)].rank(pct=True))
 # make ensembles for val and tournament
 print('creating ensembles for tournament and validation')
 validation_data["ensemble_neutral_riskiest_50"] = sum(
