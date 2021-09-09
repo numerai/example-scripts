@@ -69,7 +69,7 @@ def get_biggest_change_features(corrs, n):
 
 def get_time_series_cross_val_splits(data, cv = 3, embargo = 12):
     all_train_eras = data[ERA_COL].unique()
-    len_split = len(all_train_eras) // 3
+    len_split = len(all_train_eras) // cv
     test_splits = [all_train_eras[i * len_split:(i + 1) * len_split] for i in range(cv)]
     # fix the last test split to have all the last eras, in case the number of eras wasn't divisible by cv
     test_splits[-1] = np.append(test_splits[-1], all_train_eras[-1])
