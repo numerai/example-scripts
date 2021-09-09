@@ -14,11 +14,11 @@ current_round = napi.get_current_round(tournament=8)  # tournament 8 is the prim
 # read in all of the new datas
 # tournament data and example predictions change every week so we specify the round in their names
 # training and validation data only change periodically, so no need to download them over again every single week
-download_data(napi, 'numerai_training_data.parquet', 'numerai_training_data.parquet', round=current_round)
-download_data(napi, 'numerai_tournament_data.parquet', f'numerai_tournament_data_{current_round}.parquet', round=current_round)
-download_data(napi, 'numerai_validation_data.parquet', 'numerai_validation_data.parquet', round=current_round)
-download_data(napi, 'example_predictions.parquet', f'example_predictions_{current_round}.parquet', round=current_round)
-download_data(napi, 'example_validation_predictions.parquet', f'example_validation_predictions.parquet', round=current_round)
+napi.download_dataset("numerai_training_data.parquet", "numerai_training_data.parquet")
+napi.download_dataset("numerai_tournament_data.parquet", f"numerai_tournament_data_{current_round}.parquet")
+napi.download_dataset("numerai_validation_data.parquet", f"numerai_validation_data.parquet")
+napi.download_dataset("example_predictions.parquet", f"example_predictions_{current_round}.parquet")
+napi.download_dataset("example_validation_predictions.parquet", "example_validation_predictions.parquet")
 
 spinner.start('Reading parquet data')
 training_data = pd.read_parquet('numerai_training_data.parquet')
