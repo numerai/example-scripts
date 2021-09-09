@@ -267,53 +267,8 @@ def validation_metrics(validation_data, pred_cols, example_col, fast_mode=False)
     return validation_stats.transpose()
 
 
-
-def download_file(url: str, dest_path: str, show_progress_bars: bool = True):
-
-    req = requests.get(url, stream=True)
-    req.raise_for_status()
-
-    # Total size in bytes.
-    total_size = int(req.headers.get('content-length', 0))
-
-    if os.path.exists(dest_path):
-        file_size = os.stat(dest_path).st_size  # File size in bytes
-        if file_size < total_size:
-            # Download incomplete
-            resume_header = {'Range': 'bytes=%d-' % file_size}
-            req = requests.get(url, headers=resume_header, stream=True,
-                               verify=False, allow_redirects=True)
-        elif file_size == total_size:
-            # Download complete
-            return
-        else:
-            # Error, delete file and restart download
-            os.remove(dest_path)
-            file_size = 0
-
-    with open(dest_path, "ab") as dest_file:
-        for chunk in req.iter_content(1024):
-            dest_file.write(chunk)
-
-
 def download_data(napi, filename, dest_path, round=None):
     spinner.start(f'Downloading {dest_path}')
-    query = """
-            query ($filename: String!) {
-                dataset(filename: $filename)
-            }
-            """
-    params = {
-        'filename': filename
-    }
-    if round:
-        query = """
-                    query ($filename: String!, $round: Int) {
-                        dataset(filename: $filename, round: $round)
-                    }
-                    """
-        params['round'] = round
-    dataset_url = napi.raw_query(query, params)['data']['dataset']
-    download_file(dataset_url, dest_path, show_progress_bars=True)
+    napi.download_dataset(filename, dest_path, round=round)
     spinner.succeed()
     return dataset_url
