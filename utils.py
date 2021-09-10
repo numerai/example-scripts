@@ -266,8 +266,7 @@ def validation_metrics(validation_data, pred_cols, example_col, fast_mode=False)
     return validation_stats.transpose()
 
 
-def download_data(napi, filename, dest_path, round=None):
+def download_data(napi, filename, dest_path):
     spinner.start(f'Downloading {dest_path}')
-    napi.download_dataset(filename, dest_path, round=round)
+    napi.download_dataset(filename, dest_path)
     spinner.succeed()
-    return dataset_url

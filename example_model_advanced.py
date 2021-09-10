@@ -37,7 +37,7 @@ print("Entering model selection loop.  This may take awhile.")
 if model_selection_loop:
     model_config = {}
     print('downloading training_data')
-    download_data(napi, 'numerai_training_data.parquet', 'numerai_training_data.parquet', round=current_round)
+    download_data(napi, 'numerai_training_data.parquet', 'numerai_training_data.parquet')
 
     print("reading training data from local file")
     training_data = pd.read_parquet('numerai_training_data.parquet')
@@ -184,16 +184,13 @@ else:
 """ Things that we always do even if we've already trained """
 gc.collect()
 print("downloading tournament_data")
-download_data(napi, 'numerai_tournament_data.parquet', f'numerai_tournament_data_{current_round}.parquet',
-              round=current_round)
+download_data(napi, 'numerai_tournament_data.parquet', f'numerai_tournament_data_{current_round}.parquet')
 print("downloading validation_data")
-download_data(napi, 'numerai_validation_data.parquet', 'numerai_validation_data.parquet', round=current_round)
+download_data(napi, 'numerai_validation_data.parquet', 'numerai_validation_data.parquet')
 print("downloading example_predictions")
-download_data(napi, 'example_predictions.parquet', f'example_predictions_{current_round}.parquet',
-              round=current_round)
+download_data(napi, 'example_predictions.parquet', f'example_predictions_{current_round}.parquet')
 print("downloading example_validation_predictions")
-download_data(napi, 'example_validation_predictions.parquet', f'example_validation_predictions.parquet',
-              round=current_round)
+download_data(napi, 'example_validation_predictions.parquet', f'example_validation_predictions.parquet')
 
 print("reading tournament_data")
 tournament_data = pd.read_parquet(f'numerai_tournament_data_{current_round}.parquet')
