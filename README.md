@@ -248,7 +248,7 @@ The live portion of the dataset (tournament_data) is updated every week and repr
 
 ### What is Parquet?
 
-(Parquet)[https://databricks.com/glossary/what-is-parquet] is an efficient and performant file format that is IO optimized for reading in subsets of columns at a time.
+[Parquet](https://databricks.com/glossary/what-is-parquet) is an efficient and performant file format that is IO optimized for reading in subsets of columns at a time.
 
 Use the parquet versions (instead of the standard CSV) of the dataset files to minimize time spent on IO (downloading and reading the file into memory).
 
@@ -272,7 +272,7 @@ Use the `dataset` query in the [GraphQL API](https://api-tournament.numer.ai/) _
 
 The easiest way to get started with the new dataset is to check out the new example models and analysis and tips notebook in this repo.
 
-Also check out this (deep dive)[https://forum.numer.ai/t/super-massive-data-release-deep-dive/4053] on the new dataset in the forum.
+Also check out this [deep dive](https://forum.numer.ai/t/super-massive-data-release-deep-dive/4053) on the new dataset in the forum.
 
 # Support
 
