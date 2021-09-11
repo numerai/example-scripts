@@ -67,10 +67,9 @@ def get_biggest_change_features(corrs, n):
     return worst_n
 
 
-def get_time_series_cross_val_splits(data, cv, embargo):
+def get_time_series_cross_val_splits(data, cv = 3, embargo = 12):
     all_train_eras = data[ERA_COL].unique()
-    cv = 3
-    len_split = len(all_train_eras) // 3
+    len_split = len(all_train_eras) // cv
     test_splits = [all_train_eras[i * len_split:(i + 1) * len_split] for i in range(cv)]
     # fix the last test split to have all the last eras, in case the number of eras wasn't divisible by cv
     test_splits[-1] = np.append(test_splits[-1], all_train_eras[-1])
@@ -85,7 +84,7 @@ def get_time_series_cross_val_splits(data, cv, embargo):
         # one era is length 5, so we need to embargo by target_length/5 eras.
         # To be consistent for all targets, let's embargo everything by 60/5 == 12 eras.
         train_split = [e for e in train_split_not_embargoed if
-                       abs(int(e) - test_split_max) > 12 and abs(int(e) - test_split_min) > 12]
+                       abs(int(e) - test_split_max) > embargo and abs(int(e) - test_split_min) > embargo]
         train_splits.append(train_split)
 
     # convenient way to iterate over train and test splits
@@ -267,53 +266,7 @@ def validation_metrics(validation_data, pred_cols, example_col, fast_mode=False)
     return validation_stats.transpose()
 
 
-
-def download_file(url: str, dest_path: str, show_progress_bars: bool = True):
-
-    req = requests.get(url, stream=True)
-    req.raise_for_status()
-
-    # Total size in bytes.
-    total_size = int(req.headers.get('content-length', 0))
-
-    if os.path.exists(dest_path):
-        file_size = os.stat(dest_path).st_size  # File size in bytes
-        if file_size < total_size:
-            # Download incomplete
-            resume_header = {'Range': 'bytes=%d-' % file_size}
-            req = requests.get(url, headers=resume_header, stream=True,
-                               verify=False, allow_redirects=True)
-        elif file_size == total_size:
-            # Download complete
-            return
-        else:
-            # Error, delete file and restart download
-            os.remove(dest_path)
-            file_size = 0
-
-    with open(dest_path, "ab") as dest_file:
-        for chunk in req.iter_content(1024):
-            dest_file.write(chunk)
-
-
-def download_data(napi, filename, dest_path, round=None):
+def download_data(napi, filename, dest_path):
     spinner.start(f'Downloading {dest_path}')
-    query = """
-            query ($filename: String!) {
-                dataset(filename: $filename)
-            }
-            """
-    params = {
-        'filename': filename
-    }
-    if round:
-        query = """
-                    query ($filename: String!, $round: Int) {
-                        dataset(filename: $filename, round: $round)
-                    }
-                    """
-        params['round'] = round
-    dataset_url = napi.raw_query(query, params)['data']['dataset']
-    download_file(dataset_url, dest_path, show_progress_bars=True)
+    napi.download_dataset(filename, dest_path)
     spinner.succeed()
-    return dataset_url

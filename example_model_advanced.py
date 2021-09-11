@@ -37,7 +37,7 @@ print("Entering model selection loop.  This may take awhile.")
 if model_selection_loop:
     model_config = {}
     print('downloading training_data')
-    download_data(napi, 'numerai_training_data.parquet', 'numerai_training_data.parquet', round=current_round)
+    download_data(napi, 'numerai_training_data.parquet', 'numerai_training_data.parquet')
 
     print("reading training data from local file")
     training_data = pd.read_parquet('numerai_training_data.parquet')
@@ -115,6 +115,9 @@ if model_selection_loop:
             pred_cols.add(f"preds_{model_name}_neutral_riskiest_50")
 
         print("creating ensembles")
+        # ranking per era for all of our pred cols so we can combine safely on the same scales
+        training_data[list(pred_cols)] = training_data.groupby(ERA_COL).apply(
+            lambda d: d[list(pred_cols)].rank(pct=True))
         # do ensembles
         training_data["ensemble_neutral_riskiest_50"] = sum(
             [training_data[pred_col] for pred_col in pred_cols if pred_col.endswith("neutral_riskiest_50")]).rank(
@@ -181,16 +184,13 @@ else:
 """ Things that we always do even if we've already trained """
 gc.collect()
 print("downloading tournament_data")
-download_data(napi, 'numerai_tournament_data.parquet', f'numerai_tournament_data_{current_round}.parquet',
-              round=current_round)
+download_data(napi, 'numerai_tournament_data.parquet', f'numerai_tournament_data_{current_round}.parquet')
 print("downloading validation_data")
-download_data(napi, 'numerai_validation_data.parquet', 'numerai_validation_data.parquet', round=current_round)
+download_data(napi, 'numerai_validation_data.parquet', 'numerai_validation_data.parquet')
 print("downloading example_predictions")
-download_data(napi, 'example_predictions.parquet', f'example_predictions_{current_round}.parquet',
-              round=current_round)
+download_data(napi, 'example_predictions.parquet', f'example_predictions_{current_round}.parquet')
 print("downloading example_validation_predictions")
-download_data(napi, 'example_validation_predictions.parquet', f'example_validation_predictions.parquet',
-              round=current_round)
+download_data(napi, 'example_validation_predictions.parquet', f'example_validation_predictions.parquet')
 
 print("reading tournament_data")
 tournament_data = pd.read_parquet(f'numerai_tournament_data_{current_round}.parquet')
@@ -220,7 +220,7 @@ pred_cols = set()
 ensemble_cols = set()
 for target in targets:
     gc.collect()
-    model_name = f"model_{target}"
+    model_name = f"model_{target}_downsample{downsample_full_train}"
     print(f"loading {model_name}")
     model = load_model(model_name)
     if not model:
@@ -252,6 +252,10 @@ for target in targets:
     pred_cols.add(f"preds_{model_name}")
     pred_cols.add(f"preds_{model_name}_neutral_riskiest_50")
 
+
+# rank per era for each prediction column so that we can combine safely
+validation_data[list(pred_cols)] = validation_data.groupby(ERA_COL).apply(lambda d: d[list(pred_cols)].rank(pct=True))
+tournament_data[list(pred_cols)] = tournament_data.groupby(ERA_COL).apply(lambda d: d[list(pred_cols)].rank(pct=True))
 # make ensembles for val and tournament
 print('creating ensembles for tournament and validation')
 validation_data["ensemble_neutral_riskiest_50"] = sum(
