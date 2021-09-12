@@ -74,7 +74,7 @@ def get_time_series_cross_val_splits(data, cv = 3, embargo = 12):
     # fix the last test split to have all the last eras, in case the number of eras wasn't divisible by cv
     remainder = len(all_train_eras) % cv
     if remainder != 0:
-        test_splits[-1] = np.append(test_splits[-1], all_train_eras[-1])
+        test_splits[-1] = np.append(test_splits[-1], all_train_eras[-remainder:])
 
     train_splits = []
     for test_split in test_splits:
