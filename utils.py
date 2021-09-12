@@ -84,7 +84,7 @@ def get_time_series_cross_val_splits(data, cv = 3, embargo = 12):
         # one era is length 5, so we need to embargo by target_length/5 eras.
         # To be consistent for all targets, let's embargo everything by 60/5 == 12 eras.
         train_split = [e for e in train_split_not_embargoed if
-                       abs(int(e) - test_split_max) > embargo and abs(int(e) - test_split_min) > embargo]
+                       abs(int(e) - test_split_max) >= embargo and abs(int(e) - test_split_min) >= embargo]
         train_splits.append(train_split)
 
     # convenient way to iterate over train and test splits
