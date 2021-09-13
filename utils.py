@@ -235,7 +235,7 @@ def validation_metrics(validation_data, pred_cols, example_col, fast_mode=False)
 
             tb200_mean = tb200_validation_correlations.mean()[pred_col]
             tb200_std = tb200_validation_correlations.std(ddof=0)[pred_col]
-            tb200_sharpe = mean / std
+            tb200_sharpe = tb200_mean / tb200_std
 
             validation_stats.loc["tb200_mean", pred_col] = tb200_mean
             validation_stats.loc["tb200_std", pred_col] = tb200_std
