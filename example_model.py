@@ -1,6 +1,8 @@
 import pandas as pd
 from lightgbm import LGBMRegressor
 import gc
+import json
+
 from numerapi import NumerAPI
 from halo import Halo
 from utils import save_model, load_model, neutralize, get_biggest_change_features, validation_metrics, download_data
@@ -33,6 +35,25 @@ validation_data[EXAMPLE_PREDS_COL] = validation_preds["prediction"]
 
 TARGET_COL = "target"
 ERA_COL = "era"
+
+# Uncomment to load and use a feature subset instead of all the features in dataset
+# with open("feature_dictionary.json", "r") as f:
+#     features_dict = json.load(f)
+#
+# feature_set = features_dict["feature_sets"]["good small"]
+# read_columns = feature_set + [TARGET_COL, ERA_COL]
+#
+# spinner.start("Reading partial parquet data ")
+# training_data = pd.read_parquet("numerai_training_data.parquet", columns=read_columns)
+# tournament_data = pd.read_parquet(
+# f"numerai_tournament_data_{current_round}.parquet", columns=read_columns
+# )
+# validation_data = pd.read_parquet(
+#     "numerai_validation_data.parquet", columns=read_columns
+# )
+# example_preds = pd.read_parquet(f"example_predictions_{current_round}.parquet")
+# validation_preds = pd.read_parquet("example_validation_predictions.parquet")
+# spinner.succeed()
 
 # all feature columns start with the prefix "feature_"
 feature_cols = [c for c in training_data if c.startswith("feature_")]
