@@ -9,7 +9,10 @@ import json
 from scipy.stats import skew, kurtosis
 
 ERA_COL = "era"
-TARGET_COL = "target"
+TARGET_COL = "target_nomi_20"
+DATA_TYPE_COL = "data_type"
+EXAMPLE_PREDS_COL = "example_preds"
+
 spinner = Halo(text='', spinner='dots')
 
 MODEL_FOLDER = "models"
