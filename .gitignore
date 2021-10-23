@@ -92,6 +92,7 @@ ENV/
 *.csv
 *.parquet
 *.pkl
+*.json
 
 .idea
 example_model.xgb
