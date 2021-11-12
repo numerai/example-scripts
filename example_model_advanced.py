@@ -274,9 +274,6 @@ ensemble_cols.add("ensemble_not_neutral")
 
 validation_data["ensemble_all"] = sum([validation_data[pred_col] for pred_col in pred_cols]).rank(pct=True)
 tournament_data["ensemble_all"] = sum([tournament_data[pred_col] for pred_col in pred_cols]).rank(pct=True)
-
-ensemble_cols.add("ensemble_neutral_riskiest_50")
-ensemble_cols.add("ensemble_not_neutral")
 ensemble_cols.add("ensemble_all")
 
 gc.collect()
