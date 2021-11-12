@@ -146,7 +146,7 @@ tournament_data["prediction"] = tournament_data[model_to_submit].rank(pct=True)
 validation_data["prediction"].to_csv(f"validation_predictions_{current_round}.csv")
 tournament_data["prediction"].to_csv(f"tournament_predictions_{current_round}.csv")
 
-spinner.start('Reading example validationa predictions')
+spinner.start('Reading example validation predictions')
 validation_preds = pd.read_parquet('example_validation_predictions.parquet')
 validation_data[EXAMPLE_PREDS_COL] = validation_preds["prediction"]
 spinner.succeed()
@@ -158,7 +158,7 @@ print(validation_stats[["mean", "sharpe"]].to_markdown())
 
 print(f'''
 Done! Next steps:
-    1. Go to numer.ai/leaderboard (make sure you have an account)
+    1. Go to numer.ai/tournament (make sure you have an account)
     2. Submit validation_predictions_{current_round}.csv to the diagnostics tool
     3. Submit tournament_predictions_{current_round}.csv to the "Upload Predictions" button
 ''')
