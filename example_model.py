@@ -42,6 +42,9 @@ with open("features.json", "r") as f:
 features = feature_metadata["feature_sets"]["small"]
 # read in just those features along with era and target columns
 read_columns = features + [ERA_COL, DATA_TYPE_COL, TARGET_COL]
+
+# note: sometimes when trying to read the downloaded data you get an error about invalid magic parquet bytes...
+# if so, delete the file and rerun the napi.download_dataset to fix the corrupted file
 training_data = pd.read_parquet('training_data.parquet', columns=read_columns)
 
 # pare down the number of eras to every 4th era
