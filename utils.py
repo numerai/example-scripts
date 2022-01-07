@@ -24,7 +24,7 @@ def save_prediction(df, name):
         Path(PREDICTION_FILES_FOLDER).mkdir(exist_ok=True, parents=True)
     except Exception as ex:
         pass
-    df.to_csv(f"{PREDICTION_FILES_FOLDER}/{name}", index=True)
+    df.to_csv(f"{PREDICTION_FILES_FOLDER}/{name}.csv", index=True)
 
 def save_model(model, name):
     try:
