@@ -99,7 +99,7 @@ if nans_per_col.any():
     print(f"Number of nans per column this week: {nans_per_col[nans_per_col > 0]}")
     print(f"out of {total_rows} total rows")
     print(f"filling nans with 0.5")
-    tournament_data.loc[:, features].fillna(0.5, inplace=True)
+    tournament_data.loc[:, features] = tournament_data.loc[:, features].fillna(0.5)
 else:
     print("No nans in the features this week!")
 

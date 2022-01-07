@@ -211,7 +211,7 @@ if tournament_data.loc[tournament_data["data_type"] == "live", feature_cols].isn
     print(f"Number of nans per column this week: {cols_w_nan[cols_w_nan > 0]}")
     print(f"out of {total_rows} total rows")
     print(f"filling nans with 0.5")
-    tournament_data.loc[:, feature_cols].fillna(0.5, inplace=True)
+    tournament_data.loc[:, feature_cols] = tournament_data.loc[:, feature_cols].fillna(0.5)
 else:
     print("No nans in the features this week!")
 
