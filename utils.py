@@ -19,6 +19,12 @@ MODEL_FOLDER = "models"
 MODEL_CONFIGS_FOLDER = "model_configs"
 PREDICTION_FILES_FOLDER = "prediction_files"
 
+def save_prediction(df, name):
+    try:
+        Path(PREDICTION_FILES_FOLDER).mkdir(exist_ok=True, parents=True)
+    except Exception as ex:
+        pass
+    df.to_csv(f"{PREDICTION_FILES_FOLDER}/{name}.csv", index=True)
 
 def save_model(model, name):
     try:

@@ -2,7 +2,7 @@ import pandas as pd
 from lightgbm import LGBMRegressor
 import gc
 from numerapi import NumerAPI
-from utils import save_model, load_model, neutralize, get_biggest_change_features, validation_metrics, download_data, \
+from utils import save_prediction, save_model, load_model, neutralize, get_biggest_change_features, validation_metrics, download_data, \
     load_model_config, save_model_config, get_time_series_cross_val_splits
 
 
@@ -286,5 +286,5 @@ print(validation_stats.to_markdown())
 # rename best model to prediction and rank from 0 to 1 to meet diagnostic/submission file requirements
 validation_data["prediction"] = validation_data[best_pred_col].rank(pct=True)
 tournament_data["prediction"] = tournament_data[best_pred_col].rank(pct=True)
-validation_data["prediction"].to_csv(f"prediction_files/validation_predictions_{current_round}.csv", index=True)
-tournament_data["prediction"].to_csv(f"prediction_files/tournament_predictions_{current_round}.csv", index=True)
+save_prediction(validation_data["prediction"], f"validation_predictions_{current_round}")
+save_prediction(tournament_data["prediction"], f"tournament_predictions_{current_round}")
