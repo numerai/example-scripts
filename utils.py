@@ -273,9 +273,3 @@ def validation_metrics(validation_data, pred_cols, example_col, fast_mode=False)
 
     # .transpose so that stats are columns and the model_name is the row
     return validation_stats.transpose()
-
-
-def download_data(napi, filename, dest_path):
-    spinner.start(f'Downloading {dest_path}')
-    napi.download_dataset(filename, dest_path)
-    spinner.succeed()

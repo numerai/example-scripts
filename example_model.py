@@ -24,7 +24,7 @@ from utils import (
 napi = NumerAPI()
 spinner = Halo(text='', spinner='dots')
 
-current_round = napi.get_current_round(tournament=8)  # tournament 8 is the primary Numerai Tournament
+current_round = napi.get_current_round()
 
 # Tournament data changes every week so we specify the round in their name. Training
 # and validation data only change periodically, so no need to download them every time.
@@ -32,8 +32,8 @@ print('Downloading dataset files...')
 napi.download_dataset("numerai_training_data.parquet", "training_data.parquet")
 napi.download_dataset("numerai_tournament_data.parquet", f"tournament_data_{current_round}.parquet")
 napi.download_dataset("numerai_validation_data.parquet", f"validation_data.parquet")
-napi.download_dataset("example_validation_predictions.parquet", "example_validation_predictions.parquet")
-napi.download_dataset("features.json", "features.json")
+napi.download_dataset("example_validation_predictions.parquet")
+napi.download_dataset("features.json")
 
 print('Reading minimal training data')
 # read the feature metadata amd get the "small" feature set
