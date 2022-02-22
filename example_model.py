@@ -36,7 +36,7 @@ napi.download_dataset("example_validation_predictions.parquet", "example_validat
 napi.download_dataset("features.json", "features.json")
 
 print('Reading minimal training data')
-# read the feature metadata amd get the "small" feature set
+# read the feature metadata and get the "small" feature set
 with open("features.json", "r") as f:
     feature_metadata = json.load(f)
 features = feature_metadata["feature_sets"]["small"]
