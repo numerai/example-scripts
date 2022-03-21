@@ -1,0 +1,12 @@
+halo~=0.0.31
+lightgbm~=3.3
+numerapi~=2.9
+numpy~=1.22
+pandas~=1.4
+pyarrow~=7.0
+requests~=2.27
+scikit-learn~=1.0
+scipy~=1.8
+six~=1.16
+tabulate~=0.8
+matplotlib~=3.5
