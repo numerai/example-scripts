@@ -2,7 +2,7 @@ import pandas as pd
 from lightgbm import LGBMRegressor
 import gc
 from numerapi import NumerAPI
-from utils import save_prediction, save_model, load_model, neutralize, get_biggest_change_features, validation_metrics, download_data, \
+from utils import save_prediction, save_model, load_model, neutralize, get_biggest_change_features, validation_metrics, \
     load_model_config, save_model_config, get_time_series_cross_val_splits
 
 
