@@ -13,7 +13,7 @@ from utils import (
     load_model_config,
     save_model_config,
     save_prediction,
-    TARGET_COL_V4,
+    TARGET_COL,
 )
 
 
@@ -36,7 +36,7 @@ downsample_full_train = 2
 # if model_selection_loop=True get OOS performance for training_data
 # and use that to select best model
 # if model_selection_loop=False, just predict on tournament data using existing models and model config
-model_selection_loop = False
+model_selection_loop = True
 model_config_name = "advanced_example_model"
 
 napi = NumerAPI()
@@ -51,7 +51,7 @@ napi.download_dataset("v4/features.json")
 print("Entering model selection loop.  This may take awhile.")
 if model_selection_loop:
     model_config = {}
-    print('downloading training_data')
+    print('reading training_data')
     training_data = pd.read_parquet('v4/train.parquet')
 
     # keep track of some prediction columns
@@ -84,7 +84,7 @@ if model_selection_loop:
         # getting the per era correlation of each feature vs the primary target across the training split
         print("getting feature correlations over time and identifying riskiest features")
         all_feature_corrs_split = training_data.loc[downsampled_train_split_index, :].groupby(ERA_COL).apply(
-            lambda d: d[feature_cols].corrwith(d[TARGET_COL_V4]))
+            lambda d: d[feature_cols].corrwith(d[TARGET_COL]))
         # find the riskiest features by comparing their correlation vs the target in half 1 and half 2 of training data
         # there are probably more clever ways to do this
         riskiest_features_split = get_biggest_change_features(all_feature_corrs_split, 50)
@@ -148,7 +148,7 @@ if model_selection_loop:
     # use example_col preds_model_target as an estimates since no example preds provided for training
     # fast_mode=True so that we skip some of the stats that are slower to calculate
     training_stats = validation_metrics(training_data, all_model_cols, example_col="preds_model_target",
-                                        fast_mode=True, target_col=TARGET_COL_V4)
+                                        fast_mode=True, target_col=TARGET_COL)
     print(training_stats[["mean", "sharpe"]].sort_values(by="sharpe", ascending=False).to_markdown())
 
     # pick the model that has the highest correlation sharpe
@@ -160,7 +160,7 @@ if model_selection_loop:
     # getting the per era correlation of each feature vs the target across all of training data
     print("getting feature correlations with target and identifying riskiest features")
     all_feature_corrs = training_data.groupby(ERA_COL).apply(
-        lambda d: d[feature_cols].corrwith(d[TARGET_COL_V4]))
+        lambda d: d[feature_cols].corrwith(d[TARGET_COL]))
     # find the riskiest features by comparing their correlation vs the target in half 1 and half 2 of training data
     riskiest_features = get_biggest_change_features(all_feature_corrs, 50)
 
@@ -286,7 +286,7 @@ gc.collect()
 print("getting final validation stats")
 # get our final validation stats for our chosen model
 validation_stats = validation_metrics(validation_data, list(pred_cols)+list(ensemble_cols), example_col=EXAMPLE_PREDS_COL,
-                                      fast_mode=False, target_col=TARGET_COL_V4)
+                                      fast_mode=False, target_col=TARGET_COL)
 print(validation_stats.to_markdown())
 
 # rename best model to prediction and rank from 0 to 1 to meet diagnostic/submission file requirements

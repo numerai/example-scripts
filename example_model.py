@@ -13,7 +13,7 @@ from utils import (
     validation_metrics,
     ERA_COL,
     DATA_TYPE_COL,
-    TARGET_COL_V4,
+    TARGET_COL,
     EXAMPLE_PREDS_COL
 )
 
@@ -43,7 +43,7 @@ with open("v4/features.json", "r") as f:
 # features = feature_metadata["feature_sets"]["small"] # get the small feature set
 features = feature_metadata["feature_sets"]["medium"] # get the medium feature set
 # read in just those features along with era and target columns
-read_columns = features + [ERA_COL, DATA_TYPE_COL, TARGET_COL_V4]
+read_columns = features + [ERA_COL, DATA_TYPE_COL, TARGET_COL]
 
 # note: sometimes when trying to read the downloaded data you get an error about invalid magic parquet bytes...
 # if so, delete the file and rerun the napi.download_dataset to fix the corrupted file
@@ -61,7 +61,7 @@ live_data = pd.read_parquet(f'v4/live.parquet',
 
 # getting the per era correlation of each feature vs the target
 all_feature_corrs = training_data.groupby(ERA_COL).apply(
-    lambda era: era[features].corrwith(era[TARGET_COL_V4])
+    lambda era: era[features].corrwith(era[TARGET_COL])
 )
 
 # find the riskiest features by comparing their correlation vs
@@ -86,7 +86,7 @@ if not model:
 
     # train on all of train and save the model so we don't have to train next time
     model.fit(training_data.filter(like='feature_', axis='columns'),
-              training_data[TARGET_COL_V4])
+              training_data[TARGET_COL])
     print(f"saving new model: {model_name}")
     save_model(model, model_name)
 
@@ -150,7 +150,7 @@ validation_data[EXAMPLE_PREDS_COL] = validation_preds["prediction"]
 
 # get some stats about each of our models to compare...
 # fast_mode=True so that we skip some of the stats that are slower to calculate
-validation_stats = validation_metrics(validation_data, [model_to_submit, f"preds_{model_name}"], example_col=EXAMPLE_PREDS_COL, fast_mode=True, target_col=TARGET_COL_V4)
+validation_stats = validation_metrics(validation_data, [model_to_submit, f"preds_{model_name}"], example_col=EXAMPLE_PREDS_COL, fast_mode=True, target_col=TARGET_COL)
 print(validation_stats[["mean", "sharpe"]].to_markdown())
 
 print(f'''

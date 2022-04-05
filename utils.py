@@ -7,8 +7,7 @@ import json
 from scipy.stats import skew
 
 ERA_COL = "era"
-TARGET_COL = "target_nomi_20"
-TARGET_COL_V4 = "target_nomi_v4_20"
+TARGET_COL = "target_nomi_v4_20"
 DATA_TYPE_COL = "data_type"
 EXAMPLE_PREDS_COL = "example_preds"
 
@@ -18,12 +17,6 @@ MODEL_FOLDER = "models"
 MODEL_CONFIGS_FOLDER = "model_configs"
 PREDICTION_FILES_FOLDER = "prediction_files"
 
-def save_prediction(df, name):
-    try:
-        Path(PREDICTION_FILES_FOLDER).mkdir(exist_ok=True, parents=True)
-    except Exception as ex:
-        pass
-    df.to_csv(f"{PREDICTION_FILES_FOLDER}/{name}.csv", index=True)
 
 def save_prediction(df, name):
     try:
