@@ -2,12 +2,22 @@ import pandas as pd
 from lightgbm import LGBMRegressor
 import gc
 from numerapi import NumerAPI
-from utils import save_model, load_model, neutralize, get_biggest_change_features, validation_metrics, download_data, \
-    load_model_config, save_model_config, get_time_series_cross_val_splits
+from pathlib import Path
+from utils import (
+    save_model,
+    load_model,
+    neutralize,
+    get_biggest_change_features,
+    get_time_series_cross_val_splits,
+    validation_metrics,
+    load_model_config,
+    save_model_config,
+    save_prediction,
+    TARGET_COL_V4,
+)
 
 
 EXAMPLE_PREDS_COL = "example_preds"
-TARGET_COL = "target"
 ERA_COL = "era"
 # params we'll use to train all of our models.
 # Ideal params would be more like 20000, 0.001, 6, 2**6, 0.1, but this is slow enough as it is
@@ -21,26 +31,28 @@ model_params = {"n_estimators": 2000,
 # a value of 1 means no downsampling
 # a value of 10 means use every 10th row
 downsample_cross_val = 20
-downsample_full_train = 1
+downsample_full_train = 2
 
 # if model_selection_loop=True get OOS performance for training_data
 # and use that to select best model
 # if model_selection_loop=False, just predict on tournament data using existing models and model config
-model_selection_loop = True
+model_selection_loop = False
 model_config_name = "advanced_example_model"
 
 napi = NumerAPI()
 
-current_round = napi.get_current_round(tournament=8)  # tournament 8 is the primary Numerai Tournament
+current_round = napi.get_current_round()
+
+Path("./v4").mkdir(parents=False, exist_ok=True)
+napi.download_dataset("v4/train.parquet")
+napi.download_dataset("v4/features.json")
+
 
 print("Entering model selection loop.  This may take awhile.")
 if model_selection_loop:
     model_config = {}
     print('downloading training_data')
-    download_data(napi, 'numerai_training_data.parquet', 'numerai_training_data.parquet')
-
-    print("reading training data from local file")
-    training_data = pd.read_parquet('numerai_training_data.parquet')
+    training_data = pd.read_parquet('v4/train.parquet')
 
     # keep track of some prediction columns
     ensemble_cols = set()
@@ -50,7 +62,7 @@ if model_selection_loop:
     possible_targets = [c for c in training_data.columns if c.startswith("target_")]
     # randomly pick a handful of targets
     # this can be vastly improved
-    targets = ["target", "target_nomi_60", "target_jerome_20"]
+    targets = ["target", "target_nomi_v4_60", "target_jerome_v4_20"]
 
     # all the possible features to train on
     feature_cols = [c for c in training_data if c.startswith("feature_")]
@@ -72,7 +84,7 @@ if model_selection_loop:
         # getting the per era correlation of each feature vs the primary target across the training split
         print("getting feature correlations over time and identifying riskiest features")
         all_feature_corrs_split = training_data.loc[downsampled_train_split_index, :].groupby(ERA_COL).apply(
-            lambda d: d[feature_cols].corrwith(d[TARGET_COL]))
+            lambda d: d[feature_cols].corrwith(d[TARGET_COL_V4]))
         # find the riskiest features by comparing their correlation vs the target in half 1 and half 2 of training data
         # there are probably more clever ways to do this
         riskiest_features_split = get_biggest_change_features(all_feature_corrs_split, 50)
@@ -136,7 +148,7 @@ if model_selection_loop:
     # use example_col preds_model_target as an estimates since no example preds provided for training
     # fast_mode=True so that we skip some of the stats that are slower to calculate
     training_stats = validation_metrics(training_data, all_model_cols, example_col="preds_model_target",
-                                        fast_mode=True)
+                                        fast_mode=True, target_col=TARGET_COL_V4)
     print(training_stats[["mean", "sharpe"]].sort_values(by="sharpe", ascending=False).to_markdown())
 
     # pick the model that has the highest correlation sharpe
@@ -148,7 +160,7 @@ if model_selection_loop:
     # getting the per era correlation of each feature vs the target across all of training data
     print("getting feature correlations with target and identifying riskiest features")
     all_feature_corrs = training_data.groupby(ERA_COL).apply(
-        lambda d: d[feature_cols].corrwith(d[TARGET_COL]))
+        lambda d: d[feature_cols].corrwith(d[TARGET_COL_V4]))
     # find the riskiest features by comparing their correlation vs the target in half 1 and half 2 of training data
     riskiest_features = get_biggest_change_features(all_feature_corrs, 50)
 
@@ -183,35 +195,26 @@ else:
 
 """ Things that we always do even if we've already trained """
 gc.collect()
-print("downloading tournament_data")
-download_data(napi, 'numerai_tournament_data.parquet', f'numerai_tournament_data_{current_round}.parquet')
-print("downloading validation_data")
-download_data(napi, 'numerai_validation_data.parquet', 'numerai_validation_data.parquet')
-print("downloading example_predictions")
-download_data(napi, 'example_predictions.parquet', f'example_predictions_{current_round}.parquet')
-print("downloading example_validation_predictions")
-download_data(napi, 'example_validation_predictions.parquet', f'example_validation_predictions.parquet')
-
 print("reading tournament_data")
-tournament_data = pd.read_parquet(f'numerai_tournament_data_{current_round}.parquet')
+live_data = pd.read_parquet('v4/live.parquet')
 print("reading validation_data")
-validation_data = pd.read_parquet('numerai_validation_data.parquet')
+validation_data = pd.read_parquet('v4/validation.parquet')
 print("reading example_predictions")
-example_preds = pd.read_parquet(f'example_predictions_{current_round}.parquet')
+example_preds = pd.read_parquet('v4/live_example_preds.parquet')
 print("reading example_validaton_predictions")
-validation_example_preds = pd.read_parquet('example_validation_predictions.parquet')
+validation_example_preds = pd.read_parquet('v4/validation_example_preds.parquet')
 # set the example predictions
 validation_data[EXAMPLE_PREDS_COL] = validation_example_preds["prediction"]
 
 # check for nans and fill nans
 print("checking for nans in the tournament data")
-if tournament_data.loc[tournament_data["data_type"] == "live", feature_cols].isna().sum().sum():
-    cols_w_nan = tournament_data.loc[tournament_data["data_type"] == "live", feature_cols].isna().sum()
-    total_rows = tournament_data[tournament_data["data_type"] == "live"]
+if live_data.loc[:, feature_cols].isna().sum().sum():
+    cols_w_nan = live_data.loc[:, feature_cols].isna().sum()
+    total_rows = len(live_data)
     print(f"Number of nans per column this week: {cols_w_nan[cols_w_nan > 0]}")
     print(f"out of {total_rows} total rows")
     print(f"filling nans with 0.5")
-    tournament_data.loc[:, feature_cols].fillna(0.5, inplace=True)
+    live_data.loc[:, feature_cols] = live_data.loc[:, feature_cols].fillna(0.5)
 else:
     print("No nans in the features this week!")
 
@@ -231,7 +234,7 @@ for target in targets:
         print(f"New features are available! Might want to retrain model {model_name}.")
     print(f"predicting tournament and validation for {model_name}")
     validation_data.loc[:, f"preds_{model_name}"] = model.predict(validation_data.loc[:, model_expected_features])
-    tournament_data.loc[:, f"preds_{model_name}"] = model.predict(tournament_data.loc[:, model_expected_features])
+    live_data.loc[:, f"preds_{model_name}"] = model.predict(live_data.loc[:, model_expected_features])
 
     # do different neutralizations
     # neutralize our predictions to the riskiest features only
@@ -242,7 +245,7 @@ for target in targets:
                                                                             proportion=1.0,
                                                                             normalize=True,
                                                                             era_col=ERA_COL)[f"preds_{model_name}"]
-    tournament_data[f"preds_{model_name}_neutral_riskiest_50"] = neutralize(df=tournament_data,
+    live_data[f"preds_{model_name}_neutral_riskiest_50"] = neutralize(df=live_data,
                                                                             columns=[f"preds_{model_name}"],
                                                                             neutralizers=riskiest_features,
                                                                             proportion=1.0,
@@ -255,39 +258,36 @@ for target in targets:
 
 # rank per era for each prediction column so that we can combine safely
 validation_data[list(pred_cols)] = validation_data.groupby(ERA_COL).apply(lambda d: d[list(pred_cols)].rank(pct=True))
-tournament_data[list(pred_cols)] = tournament_data.groupby(ERA_COL).apply(lambda d: d[list(pred_cols)].rank(pct=True))
+live_data[list(pred_cols)] = live_data.groupby(ERA_COL).apply(lambda d: d[list(pred_cols)].rank(pct=True))
 # make ensembles for val and tournament
 print('creating ensembles for tournament and validation')
 validation_data["ensemble_neutral_riskiest_50"] = sum(
     [validation_data[pred_col] for pred_col in pred_cols if pred_col.endswith("neutral_riskiest_50")]).rank(
     pct=True)
-tournament_data["ensemble_neutral_riskiest_50"] = sum(
-    [tournament_data[pred_col] for pred_col in pred_cols if pred_col.endswith("neutral_riskiest_50")]).rank(
+live_data["ensemble_neutral_riskiest_50"] = sum(
+    [live_data[pred_col] for pred_col in pred_cols if pred_col.endswith("neutral_riskiest_50")]).rank(
     pct=True)
 ensemble_cols.add("ensemble_neutral_riskiest_50")
 
 validation_data["ensemble_not_neutral"] = sum(
     [validation_data[pred_col] for pred_col in pred_cols if "neutral" not in pred_col]).rank(pct=True)
-tournament_data["ensemble_not_neutral"] = sum(
-    [tournament_data[pred_col] for pred_col in pred_cols if "neutral" not in pred_col]).rank(pct=True)
+live_data["ensemble_not_neutral"] = sum(
+    [live_data[pred_col] for pred_col in pred_cols if "neutral" not in pred_col]).rank(pct=True)
 ensemble_cols.add("ensemble_not_neutral")
 
 validation_data["ensemble_all"] = sum([validation_data[pred_col] for pred_col in pred_cols]).rank(pct=True)
-tournament_data["ensemble_all"] = sum([tournament_data[pred_col] for pred_col in pred_cols]).rank(pct=True)
-
-ensemble_cols.add("ensemble_neutral_riskiest_50")
-ensemble_cols.add("ensemble_not_neutral")
+live_data["ensemble_all"] = sum([live_data[pred_col] for pred_col in pred_cols]).rank(pct=True)
 ensemble_cols.add("ensemble_all")
 
 gc.collect()
 print("getting final validation stats")
 # get our final validation stats for our chosen model
-validation_stats = validation_metrics(validation_data, [best_pred_col], example_col=EXAMPLE_PREDS_COL,
-                                      fast_mode=False)
+validation_stats = validation_metrics(validation_data, list(pred_cols)+list(ensemble_cols), example_col=EXAMPLE_PREDS_COL,
+                                      fast_mode=False, target_col=TARGET_COL_V4)
 print(validation_stats.to_markdown())
 
 # rename best model to prediction and rank from 0 to 1 to meet diagnostic/submission file requirements
 validation_data["prediction"] = validation_data[best_pred_col].rank(pct=True)
-tournament_data["prediction"] = tournament_data[best_pred_col].rank(pct=True)
-validation_data["prediction"].to_csv(f"prediction_files/validation_predictions_{current_round}.csv", index=True)
-tournament_data["prediction"].to_csv(f"prediction_files/tournament_predictions_{current_round}.csv", index=True)
+live_data["prediction"] = live_data[best_pred_col].rank(pct=True)
+save_prediction(validation_data["prediction"], f"validation_predictions_{current_round}")
+save_prediction(live_data["prediction"], f"live_data_{current_round}")
