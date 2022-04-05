@@ -1,15 +1,13 @@
-import os
-import requests
 import numpy as np
 import pandas as pd
 import scipy
 from halo import Halo
 from pathlib import Path
 import json
-from scipy.stats import skew, kurtosis
+from scipy.stats import skew
 
 ERA_COL = "era"
-TARGET_COL = "target_nomi_20"
+TARGET_COL = "target_nomi_v4_20"
 DATA_TYPE_COL = "data_type"
 EXAMPLE_PREDS_COL = "example_preds"
 
@@ -19,12 +17,14 @@ MODEL_FOLDER = "models"
 MODEL_CONFIGS_FOLDER = "model_configs"
 PREDICTION_FILES_FOLDER = "prediction_files"
 
+
 def save_prediction(df, name):
     try:
         Path(PREDICTION_FILES_FOLDER).mkdir(exist_ok=True, parents=True)
     except Exception as ex:
         pass
     df.to_csv(f"{PREDICTION_FILES_FOLDER}/{name}.csv", index=True)
+
 
 def save_model(model, name):
     try:
@@ -76,7 +76,7 @@ def get_biggest_change_features(corrs, n):
     return worst_n
 
 
-def get_time_series_cross_val_splits(data, cv = 3, embargo = 12):
+def get_time_series_cross_val_splits(data, cv=3, embargo=12):
     all_train_eras = data[ERA_COL].unique()
     len_split = len(all_train_eras) // cv
     test_splits = [all_train_eras[i * len_split:(i + 1) * len_split] for i in range(cv)]
@@ -126,7 +126,7 @@ def neutralize(df,
         exposures = df_era[neutralizers].values
 
         scores -= proportion * exposures.dot(
-            np.linalg.pinv(exposures.astype(np.float32)).dot(scores.astype(np.float32)))
+            np.linalg.pinv(exposures.astype(np.float32), rcond=1e-6).dot(scores.astype(np.float32)))
 
         scores /= scores.std(ddof=0)
 
@@ -158,12 +158,12 @@ def unif(df):
     return pd.Series(x, index=df.index)
 
 
-def get_feature_neutral_mean(df, prediction_col):
+def get_feature_neutral_mean(df, prediction_col, target_col):
     feature_cols = [c for c in df.columns if c.startswith("feature")]
     df.loc[:, "neutral_sub"] = neutralize(df, [prediction_col],
                                           feature_cols)[prediction_col]
     scores = df.groupby("era").apply(
-        lambda x: (unif(x["neutral_sub"]).corr(x[TARGET_COL]))).mean()
+        lambda x: (unif(x["neutral_sub"]).corr(x[target_col]))).mean()
     return np.mean(scores)
 
 
@@ -188,13 +188,13 @@ def fast_score_by_date(df, columns, target, tb=None, era_col="era"):
     return pd.DataFrame(np.array(computed), columns=columns, index=df[era_col].unique())
 
 
-def validation_metrics(validation_data, pred_cols, example_col, fast_mode=False):
+def validation_metrics(validation_data, pred_cols, example_col, fast_mode=False, target_col=TARGET_COL):
     validation_stats = pd.DataFrame()
     feature_cols = [c for c in validation_data if c.startswith("feature_")]
     for pred_col in pred_cols:
         # Check the per-era correlations on the validation set (out of sample)
         validation_correlations = validation_data.groupby(ERA_COL).apply(
-            lambda d: unif(d[pred_col]).corr(d[TARGET_COL]))
+            lambda d: unif(d[pred_col]).corr(d[target_col]))
 
         mean = validation_correlations.mean()
         std = validation_correlations.std(ddof=0)
@@ -214,13 +214,13 @@ def validation_metrics(validation_data, pred_cols, example_col, fast_mode=False)
         payout_daily_value = (payout_scores + 1).cumprod()
 
         apy = (
-            (
-                (payout_daily_value.dropna().iloc[-1])
-                ** (1 / len(payout_scores))
-            )
-            ** 49  # 52 weeks of compounding minus 3 for stake compounding lag
-            - 1
-        ) * 100
+                      (
+                              (payout_daily_value.dropna().iloc[-1])
+                              ** (1 / len(payout_scores))
+                      )
+                      ** 49  # 52 weeks of compounding minus 3 for stake compounding lag
+                      - 1
+              ) * 100
 
         validation_stats.loc["apy", pred_col] = apy
 
@@ -232,14 +232,14 @@ def validation_metrics(validation_data, pred_cols, example_col, fast_mode=False)
             validation_stats.loc["max_feature_exposure", pred_col] = max_feature_exposure
 
             # Check feature neutral mean
-            feature_neutral_mean = get_feature_neutral_mean(validation_data, pred_col)
+            feature_neutral_mean = get_feature_neutral_mean(validation_data, pred_col, target_col)
             validation_stats.loc["feature_neutral_mean", pred_col] = feature_neutral_mean
 
             # Check top and bottom 200 metrics (TB200)
             tb200_validation_correlations = fast_score_by_date(
                 validation_data,
                 [pred_col],
-                TARGET_COL,
+                target_col,
                 tb=200,
                 era_col=ERA_COL
             )
@@ -257,8 +257,8 @@ def validation_metrics(validation_data, pred_cols, example_col, fast_mode=False)
         corr_scores = []
         for _, x in validation_data.groupby(ERA_COL):
             series = neutralize_series(unif(x[pred_col]), (x[example_col]))
-            mmc_scores.append(np.cov(series, x[TARGET_COL])[0, 1] / (0.29 ** 2))
-            corr_scores.append(unif(x[pred_col]).corr(x[TARGET_COL]))
+            mmc_scores.append(np.cov(series, x[target_col])[0, 1] / (0.29 ** 2))
+            corr_scores.append(unif(x[pred_col]).corr(x[target_col]))
 
         val_mmc_mean = np.mean(mmc_scores)
         val_mmc_std = np.std(mmc_scores)
