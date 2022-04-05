@@ -101,6 +101,7 @@ if nans_per_col.any():
     print(f"out of {total_rows} total rows")
     print(f"filling nans with 0.5")
     live_data.loc[:, features] = live_data.loc[:, features].fillna(0.5)
+
 else:
     print("No nans in the features this week!")
 
@@ -158,4 +159,3 @@ Done! Next steps:
     2. Submit validation_predictions_{current_round}.csv to the diagnostics tool
     3. Submit tournament_predictions_{current_round}.csv to the "Upload Predictions" button
 ''')
-

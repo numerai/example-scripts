@@ -220,7 +220,7 @@ After instantiating the NumerAPI client with API keys, you can then upload your 
 ```python
 # upload predictions
 model_id = napi.get_models()['your_model_name']
-napi.upload_predictions("tournament_predictions.csv", model_id=model_id)
+napi.upload_predictions("tournament_predictions.csv", model_id=model_id, version=2) # version=2 for the ~1K features
 ```
 
 The recommended setup for a fully automated submission process is to use Numerai Compute. Please see the

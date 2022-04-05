@@ -195,6 +195,7 @@ else:
 
 """ Things that we always do even if we've already trained """
 gc.collect()
+
 print("reading tournament_data")
 live_data = pd.read_parquet('v4/live.parquet')
 print("reading validation_data")
@@ -215,6 +216,7 @@ if live_data.loc[:, feature_cols].isna().sum().sum():
     print(f"out of {total_rows} total rows")
     print(f"filling nans with 0.5")
     live_data.loc[:, feature_cols] = live_data.loc[:, feature_cols].fillna(0.5)
+
 else:
     print("No nans in the features this week!")
 
@@ -277,6 +279,7 @@ ensemble_cols.add("ensemble_not_neutral")
 
 validation_data["ensemble_all"] = sum([validation_data[pred_col] for pred_col in pred_cols]).rank(pct=True)
 live_data["ensemble_all"] = sum([live_data[pred_col] for pred_col in pred_cols]).rank(pct=True)
+
 ensemble_cols.add("ensemble_all")
 
 gc.collect()
