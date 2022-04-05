@@ -145,7 +145,7 @@ live_data["prediction"] = live_data[model_to_submit].rank(pct=True)
 validation_data["prediction"].to_csv(f"validation_predictions_{current_round}.csv")
 live_data["prediction"].to_csv(f"live_predictions_{current_round}.csv")
 
-validation_preds = pd.read_parquet('v4/example_validation_preds.parquet')
+validation_preds = pd.read_parquet('v4/validation_example_preds.parquet')
 validation_data[EXAMPLE_PREDS_COL] = validation_preds["prediction"]
 
 # get some stats about each of our models to compare...
