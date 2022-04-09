@@ -31,7 +31,7 @@ print('Downloading dataset files...')
 Path("./v4").mkdir(parents=False, exist_ok=True)
 napi.download_dataset("v4/train.parquet")
 napi.download_dataset("v4/validation.parquet")
-napi.download_dataset("v4/live.parquet")
+napi.download_dataset("v4/live.parquet", f"v4/live_{current_round}.parquet")
 napi.download_dataset("v4/validation_example_preds.parquet")
 napi.download_dataset("v4/features.json")
 
@@ -51,7 +51,7 @@ training_data = pd.read_parquet('v4/train.parquet',
                                 columns=read_columns)
 validation_data = pd.read_parquet('v4/validation.parquet',
                                   columns=read_columns)
-live_data = pd.read_parquet(f'v4/live.parquet',
+live_data = pd.read_parquet(f'v4/live_{current_round}.parquet',
                                   columns=read_columns)
 
 
