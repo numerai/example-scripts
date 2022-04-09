@@ -158,13 +158,27 @@ def unif(df):
     return pd.Series(x, index=df.index)
 
 
-def get_feature_neutral_mean(df, prediction_col, target_col):
-    feature_cols = [c for c in df.columns if c.startswith("feature")]
+def get_feature_neutral_mean(df, prediction_col, target_col, features_for_neutralization=None):
+    if features_for_neutralization is None:
+        features_for_neutralization = [c for c in df.columns if c.startswith("feature")]
     df.loc[:, "neutral_sub"] = neutralize(df, [prediction_col],
-                                          feature_cols)[prediction_col]
+                                          features_for_neutralization)[prediction_col]
     scores = df.groupby("era").apply(
         lambda x: (unif(x["neutral_sub"]).corr(x[target_col]))).mean()
     return np.mean(scores)
+
+def get_feature_neutral_mean_tb_era(df, prediction_col, target_col, tb, features_for_neutralization=None):
+    if features_for_neutralization is None:
+        features_for_neutralization = [c for c in df.columns if c.startswith("feature")]
+    temp_df = df.reset_index(drop=True).copy()        # Reset index due to use of argsort later
+    temp_df.loc[:, "neutral_sub"] = neutralize(temp_df, [prediction_col],
+                                          features_for_neutralization)[prediction_col]
+    temp_df_argsort = temp_df.loc[:, 'neutral_sub'].argsort()
+    temp_df_tb_idx = pd.concat([temp_df_argsort.iloc[:tb],
+                           temp_df_argsort.iloc[-tb:]])
+    temp_df_tb = temp_df.loc[temp_df_tb_idx]
+    tb_fnc = unif(temp_df_tb['neutral_sub']).corr(temp_df_tb[target_col])
+    return tb_fnc
 
 
 def fast_score_by_date(df, columns, target, tb=None, era_col="era"):
@@ -187,8 +201,15 @@ def fast_score_by_date(df, columns, target, tb=None, era_col="era"):
 
     return pd.DataFrame(np.array(computed), columns=columns, index=df[era_col].unique())
 
+def exposure_dissimilarity_per_era(df, prediction_col, example_col, feature_cols=None):
+    if feature_cols is None:
+        feature_cols = [c for c in df.columns if c.startswith("feature")]
+    u = df.loc[:, feature_cols].corrwith(df[prediction_col])
+    e = df.loc[:, feature_cols].corrwith(df[example_col])
+    return (1 - (np.dot(u,e)/np.dot(e,e)))
 
-def validation_metrics(validation_data, pred_cols, example_col, fast_mode=False, target_col=TARGET_COL):
+def validation_metrics(validation_data, pred_cols, example_col, fast_mode=False,
+                        target_col=TARGET_COL, features_for_neutralization=None):
     validation_stats = pd.DataFrame()
     feature_cols = [c for c in validation_data if c.startswith("feature_")]
     for pred_col in pred_cols:
@@ -232,8 +253,16 @@ def validation_metrics(validation_data, pred_cols, example_col, fast_mode=False,
             validation_stats.loc["max_feature_exposure", pred_col] = max_feature_exposure
 
             # Check feature neutral mean
-            feature_neutral_mean = get_feature_neutral_mean(validation_data, pred_col, target_col)
+            feature_neutral_mean = get_feature_neutral_mean(validation_data, pred_col,
+                                                                target_col, features_for_neutralization)
             validation_stats.loc["feature_neutral_mean", pred_col] = feature_neutral_mean
+
+            # Check TB200 feature neutral mean
+            tb200_feature_neutral_mean_era = validation_data.groupby(ERA_COL).apply(lambda df: \
+                                            get_feature_neutral_mean_tb_era(df, pred_col,
+                                                                            target_col, 200,
+                                                                            features_for_neutralization))
+            validation_stats.loc["tb200_feature_neutral_mean", pred_col] = tb200_feature_neutral_mean_era.mean()
 
             # Check top and bottom 200 metrics (TB200)
             tb200_validation_correlations = fast_score_by_date(
@@ -272,6 +301,12 @@ def validation_metrics(validation_data, pred_cols, example_col, fast_mode=False,
         per_era_corrs = validation_data.groupby(ERA_COL).apply(lambda d: unif(d[pred_col]).corr(unif(d[example_col])))
         corr_with_example_preds = per_era_corrs.mean()
         validation_stats.loc["corr_with_example_preds", pred_col] = corr_with_example_preds
+
+        #Check exposure dissimilarity per era
+        tdf = validation_data.groupby(ERA_COL).apply(lambda df: \
+                                                exposure_dissimilarity_per_era(df, pred_col,
+                                                example_col, feature_cols))
+        validation_stats.loc["exposure_dissimilarity_mean", pred_col] = tdf.mean()
 
     # .transpose so that stats are columns and the model_name is the row
     return validation_stats.transpose()
