@@ -46,6 +46,10 @@ current_round = napi.get_current_round()
 Path("./v4").mkdir(parents=False, exist_ok=True)
 napi.download_dataset("v4/train.parquet")
 napi.download_dataset("v4/features.json")
+napi.download_dataset("v4/validation.parquet")
+napi.download_dataset("v4/live.parquet")
+napi.download_dataset("v4/validation_example_preds.parquet")
+napi.download_dataset("v4/live_example_preds.parquet")
 
 
 print("Entering model selection loop.  This may take awhile.")
