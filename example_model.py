@@ -119,7 +119,9 @@ live_data.loc[:, f"preds_{model_name}"] = model.predict(
 gc.collect()
 
 # neutralize our predictions to the riskiest features
-validation_data[f"preds_{model_name}_neutral_riskiest_50"] = neutralize(
+model_to_submit = f"preds_{model_name}_neutral_riskiest_50"
+
+validation_data[model_to_submit] = neutralize(
     df=validation_data,
     columns=[f"preds_{model_name}"],
     neutralizers=riskiest_features,
@@ -128,7 +130,7 @@ validation_data[f"preds_{model_name}_neutral_riskiest_50"] = neutralize(
     era_col=ERA_COL
 )
 
-live_data[f"preds_{model_name}_neutral_riskiest_50"] = neutralize(
+live_data[model_to_submit] = neutralize(
     df=live_data,
     columns=[f"preds_{model_name}"],
     neutralizers=riskiest_features,
@@ -136,8 +138,6 @@ live_data[f"preds_{model_name}_neutral_riskiest_50"] = neutralize(
     normalize=True,
     era_col=ERA_COL
 )
-
-model_to_submit = f"preds_{model_name}_neutral_riskiest_50"
 
 # rename best model to "prediction" and rank from 0 to 1 to meet upload requirements
 validation_data["prediction"] = validation_data[model_to_submit].rank(pct=True)
