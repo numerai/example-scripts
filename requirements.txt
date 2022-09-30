@@ -22,7 +22,7 @@ halo==0.0.31
     # via -r requirements.in
 idna==3.3
     # via requests
-joblib==1.1.0
+joblib==1.2.0
     # via scikit-learn
 kiwisolver==1.4.0
     # via matplotlib
