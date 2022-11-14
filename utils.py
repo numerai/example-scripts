@@ -219,7 +219,7 @@ def validation_metrics(validation_data, pred_cols, example_col, fast_mode=False,
 
         mean = validation_correlations.mean()
         std = validation_correlations.std(ddof=0)
-        sharpe = mean / std
+        sharpe = mean / (std + np.finfo(float).eps)
 
         validation_stats.loc["mean", pred_col] = mean
         validation_stats.loc["std", pred_col] = std
