@@ -96,3 +96,5 @@ ENV/
 
 .idea
 example_model.xgb
+
+.DS_Store
