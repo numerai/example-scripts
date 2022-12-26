@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 import scipy
 from halo import Halo
+from tqdm import tqdm
 from pathlib import Path
 import json
 from scipy.stats import skew
@@ -114,13 +115,17 @@ def get_time_series_cross_val_splits(data, cv=3, embargo=12):
 
 
 def neutralize(
-    df, columns, neutralizers=None, proportion=1.0, normalize=True, era_col="era"
+    df, columns, neutralizers=None, proportion=1.0, normalize=True, era_col="era", verbose=False
 ):
     if neutralizers is None:
         neutralizers = []
     unique_eras = df[era_col].unique()
     computed = []
-    for u in unique_eras:
+    if verbose:
+        iterator = tqdm(unique_eras)
+    else:
+        iterator = unique_eras
+    for u in iterator:
         df_era = df[df[era_col] == u]
         scores = df_era[columns].values
         if normalize:

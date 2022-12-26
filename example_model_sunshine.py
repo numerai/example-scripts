@@ -10,6 +10,7 @@ from numerapi import NumerAPI
 from utils import (
     save_model,
     load_model,
+    neutralize,
     validation_metrics,
     ERA_COL,
     DATA_TYPE_COL,
@@ -17,44 +18,52 @@ from utils import (
     EXAMPLE_PREDS_COL,
 )
 
-"""
-Download all the things and do a bit of formatting
-"""
+# download all the things
 
 napi = NumerAPI()
 
 current_round = napi.get_current_round()
 
-# v41 is the latest and greatest release - see details and more options at numer.ai/data
-# medium feature set is a good balance where it's not too large, but doesn't sacrifice much performance (if any)
+# Tournament data changes every week so we specify the round in their name. Training
+# and validation data only change periodically, so no need to download them every time.
 print("Downloading dataset files...")
-dataset_name = "v41"
+dataset_name = "v4.1"
 feature_set_name = "medium"
 
-# Live data changes every week so we specify the round in the name.
-# Training data doesn't change unless new features are added, so no need to download it every time.
-# Validation grows by less than 0.1% each week - we recommend redownloading and retraining about once a year.
 Path(f"./{dataset_name}").mkdir(parents=False, exist_ok=True)
+
+# we'll use the int8 in this example in order to save RAM.
+# if you remove the int8 suffix for each of these files, you'll get features between 0 and 1 as floats.
+# int_8 files are much smaller...
+# but are harder to work with because some packages don't like ints and the way NAs are encoded.
+
+# napi.download_dataset(f"{dataset_name}/train.parquet")
+# napi.download_dataset(f"{dataset_name}/validation.parquet")
+# napi.download_dataset(f"{dataset_name}/live.parquet", f"{dataset_name}/live_{current_round}.parquet")
+
 napi.download_dataset(f"{dataset_name}/train_int8.parquet")
 napi.download_dataset(f"{dataset_name}/validation_int8.parquet")
 napi.download_dataset(
     f"{dataset_name}/live_int8.parquet",
     f"{dataset_name}/live_int8_{current_round}.parquet",
 )
+
 napi.download_dataset(f"{dataset_name}/validation_example_preds.parquet")
 napi.download_dataset(f"{dataset_name}/features.json")
 
 print("Reading minimal training data")
 # read the feature metadata and get a feature set (or all the features)
+
+
 with open(f"{dataset_name}/features.json", "r") as f:
     feature_metadata = json.load(f)
 
 # features = list(feature_metadata["feature_stats"].keys()) # get all the features
+# features = feature_metadata["feature_sets"]["small"] # get the small feature set
 features = feature_metadata["feature_sets"][
     feature_set_name
 ]  # get the medium feature set
-target_cols = feature_metadata["targets"]  # get all the avilable targets
-
+target_cols = feature_metadata["targets"]
 # read in just those features along with era and target columns
 read_columns = features + target_cols + [ERA_COL, DATA_TYPE_COL]
 
@@ -66,19 +75,14 @@ training_data = pd.read_parquet(
 validation_data = pd.read_parquet(
     f"{dataset_name}/validation_int8.parquet", columns=read_columns
 )
-live_data = pd.read_parquet(
-    f"{dataset_name}/live_int8_{current_round}.parquet", columns=read_columns
-)
+live_data = pd.read_parquet(f"{dataset_name}/live_int8_{current_round}.parquet", columns=read_columns)
 
-# reduce the number of eras to every 4th era to speed things up if you want to.
-# performance is worse, but faster if you uncomment these lines.
+# reduce the number of eras to every 4th era to speed things up... uncomment these lines to speed things up.
 # every_4th_era = training_data[ERA_COL].unique()[::4]
 # training_data = training_data[training_data[ERA_COL].isin(every_4th_era)]
 # every_4th_era = validation_data[ERA_COL].unique()[::4]
-# validation_data = validation_data[validation_data[ERA_COL].isin(every_4th_era)].dropna(
-#     subset=["target"])  # get rid of eras which don't have a target yet
 
-# combine training and validation data so we can train on everything more easily
+# get all the data to possibly use for training
 all_data = pd.concat([training_data, validation_data])
 
 # save indices for easier data selection later
@@ -86,23 +90,22 @@ training_index = training_data.index
 validation_index = validation_data.index
 all_index = all_data.index
 
-# delete training and validation data to save RAM
+# delete training and validation data to save space
 del training_data
 del validation_data
 gc.collect()  # clear up memory
 print("done")
 
-# Int8 datatype has pd.NA which don't play nice with models.  We simply fill NA with median values here.
+# Int8 datatype has pd.NA which don't play nice with models.  We simply fill NA with median values here
 all_data[features] = all_data[features].fillna(all_data[features].median(skipna=True))
 all_data[features] = all_data[features].astype("int8")
-live_data[features] = live_data[features].fillna(all_data[features].median(skipna=True))
+live_data[features] = live_data[features].fillna(
+    all_data[features].median(skipna=True)
+)  # since live data is only one era, we need to use the median for all eras
 live_data[features] = live_data[features].astype("int8")
-# Alternatively we could convert nan columns to be floats and replace pd.NA with np.nan.
-# This would have the advantage of letting the LGBM model ignore nans entirely...
-# but requires our dataframe to be float datatype, which takes up much more space.
+# Alternatively could convert nan columns to be floats and replace pd.NA with np.nan
 
 
-""" Pick your LGBM Parameters """
 # small fast params
 # params_name = "sm_lgbm"
 # params = {"n_estimators": 2000,
@@ -121,15 +124,9 @@ params = {
     "colsample_bytree": 0.1,
 }
 
-""" Do the training and predicting """
-# loop through all of our favorite targets and build models on each of them -
-# one over training data, one over all available data
-
-# for the models trained on training data, we'll then predict on validation data
-# for the models trained on all data, we'll predict on live
-# we'll then look at the validation data performance to pick which model to use on live
-
-# These are the latest and greatest targets
+# loop through all of our favorite targets and build models on each of them - one over training data, one over all available data
+# for the train_data models, we'll then predict on validation data
+# for the all_data models, we'll predict on live
 targets = [
     "target_nomi_v4_20",
     "target_jerome_v4_60",
@@ -196,37 +193,53 @@ live_data["equal_weight"] = live_data[prediction_cols].mean(axis=1)
 
 prediction_cols.append("equal_weight")
 
-print("Training and predicting finished")
-
-validation_corrs = (
-    all_data.loc[validation_index, :]
-    .groupby(ERA_COL)
-    .apply(lambda d: d[prediction_cols].corrwith(d[TARGET_COL]))
+# make a 50% feature neutral variation of the ensemble model
+all_data["half_neutral_equal_weight"] = neutralize(
+    df=all_data.loc[validation_index, :],
+    columns=[f"equal_weight"],
+    neutralizers=features,
+    proportion=0.5,
+    normalize=True,
+    era_col=ERA_COL,
+    verbose=True,
 )
-validation_means = validation_corrs.mean()
-validation_sharpes = validation_means / validation_corrs.std()
+# do the same for live data
+live_data["half_neutral_equal_weight"] = neutralize(
+    df=live_data,
+    columns=[f"equal_weight"],
+    neutralizers=features,
+    proportion=0.5,
+    normalize=True,
+    era_col=ERA_COL,
+    verbose=True,
+)
 
-# explore the performance of each model to help decide which one to submit
-# validation_corrs.cumsum().plot(figsize=(15,10)
+prediction_cols.append("half_neutral_equal_weight")
 
-""" Now format your preditions and get ready to submit"""
-model_to_submit = "equal_weight"
+model_to_submit = f"half_neutral_equal_weight"
+
 # rename best model to "prediction" and rank from 0 to 1 to meet upload requirements
-all_data.loc[validation_index, "prediction"] = all_data[model_to_submit].rank(pct=True)
+all_data.loc[validation_index, "prediction"] = all_data.loc[
+    validation_index, model_to_submit
+].rank(pct=True)
 live_data["prediction"] = live_data[model_to_submit].rank(pct=True)
 all_data.loc[validation_index, "prediction"].to_csv(
     f"validation_predictions_{current_round}.csv"
 )
 live_data["prediction"].to_csv(f"live_predictions_{current_round}.csv")
 
-validation_preds = pd.read_parquet(f"{dataset_name}/validation_example_preds.parquet")
-all_data.loc[validation_index, EXAMPLE_PREDS_COL] = validation_preds["prediction"]
+validation_example_preds = pd.read_parquet(
+    f"{dataset_name}/validation_example_preds.parquet"
+)
+all_data.loc[validation_index, EXAMPLE_PREDS_COL] = validation_example_preds[
+    "prediction"
+]
 
 # get some stats about each of our models to compare...
 # fast_mode=True so that we skip some of the stats that are slower to calculate
 validation_stats = validation_metrics(
     all_data.loc[validation_index, :],
-    pred_cols=prediction_cols,
+    [model_to_submit, f"{model_to_submit}"],
     example_col=EXAMPLE_PREDS_COL,
     fast_mode=True,
     target_col=TARGET_COL,
