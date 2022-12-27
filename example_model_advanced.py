@@ -289,6 +289,15 @@ validation_stats = validation_metrics(validation_data, list(pred_cols)+list(ense
                                       fast_mode=False, target_col=TARGET_COL)
 print(validation_stats.to_markdown())
 
+# if rename best_pred_col including _downsample(x) naming part included
+val_tmp = [c for c in validation_data.columns if c.startswith("pred")]
+for col in range(len(val_tmp)):
+    if val_tmp[col].find(best_pred_col) == -1:
+        print("next_col")
+    else:
+        best_pred_col = val_tmp[col]
+        break
+
 # rename best model to prediction and rank from 0 to 1 to meet diagnostic/submission file requirements
 validation_data["prediction"] = validation_data[best_pred_col].rank(pct=True)
 live_data["prediction"] = live_data[best_pred_col].rank(pct=True)
