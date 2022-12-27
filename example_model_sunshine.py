@@ -81,6 +81,8 @@ live_data = pd.read_parquet(f"{dataset_name}/live_int8_{current_round}.parquet",
 # every_4th_era = training_data[ERA_COL].unique()[::4]
 # training_data = training_data[training_data[ERA_COL].isin(every_4th_era)]
 # every_4th_era = validation_data[ERA_COL].unique()[::4]
+# validation_data = validation_data[validation_data[ERA_COL].isin(every_4th_era)]
+
 
 # get all the data to possibly use for training
 all_data = pd.concat([training_data, validation_data])
@@ -94,35 +96,35 @@ all_index = all_data.index
 del training_data
 del validation_data
 gc.collect()  # clear up memory
-print("done")
 
 # Int8 datatype has pd.NA which don't play nice with models.  We simply fill NA with median values here
+print("cleaning up NAs")
 all_data[features] = all_data[features].fillna(all_data[features].median(skipna=True))
-all_data[features] = all_data[features].astype("int8")
+all_data[features] = all_data[features].astype("int8")  # make sure change to float32 if using the non int8 data!
 live_data[features] = live_data[features].fillna(
     all_data[features].median(skipna=True)
 )  # since live data is only one era, we need to use the median for all eras
-live_data[features] = live_data[features].astype("int8")
+live_data[features] = live_data[features].astype("int8")  # make sure change to float32 if using the non int8 data!
 # Alternatively could convert nan columns to be floats and replace pd.NA with np.nan
 
 
 # small fast params
-# params_name = "sm_lgbm"
-# params = {"n_estimators": 2000,
-#           "learning_rate": 0.01,
-#           "max_depth": 5,
-#           "num_leaves": 2 ** 5,
-#           "colsample_bytree": 0.1}
+params_name = "sm_lgbm"
+params = {"n_estimators": 2000,
+          "learning_rate": 0.01,
+          "max_depth": 5,
+          "num_leaves": 2 ** 5,
+          "colsample_bytree": 0.1}
 
 # recommended params
-params_name = "lg_lgbm"
-params = {
-    "n_estimators": 20000,
-    "learning_rate": 0.001,
-    "max_depth": 6,
-    "num_leaves": 2**6,
-    "colsample_bytree": 0.1,
-}
+# params_name = "lg_lgbm"
+# params = {
+#     "n_estimators": 20000,
+#     "learning_rate": 0.001,
+#     "max_depth": 6,
+#     "num_leaves": 2**6,
+#     "colsample_bytree": 0.1,
+# }
 
 # loop through all of our favorite targets and build models on each of them - one over training data, one over all available data
 # for the train_data models, we'll then predict on validation data
@@ -239,7 +241,7 @@ all_data.loc[validation_index, EXAMPLE_PREDS_COL] = validation_example_preds[
 # fast_mode=True so that we skip some of the stats that are slower to calculate
 validation_stats = validation_metrics(
     all_data.loc[validation_index, :],
-    [model_to_submit, f"{model_to_submit}"],
+    prediction_cols,
     example_col=EXAMPLE_PREDS_COL,
     fast_mode=True,
     target_col=TARGET_COL,
