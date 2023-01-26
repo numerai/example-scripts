@@ -24,6 +24,7 @@ The official example scripts for the [Numerai](https://numer.ai/) Data Science T
 
 ```
 pip install -U pip && pip install -r requirements.txt
+# Make sure `python --version` says python 3
 python example_model.py
 ```
 
