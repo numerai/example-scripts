@@ -157,5 +157,5 @@ print(f'''
 Done! Next steps:
     1. Go to numer.ai/tournament (make sure you have an account)
     2. Submit validation_predictions_{current_round}.csv to the diagnostics tool
-    3. Submit tournament_predictions_{current_round}.csv to the "Upload Predictions" button
+    3. Submit live_predictions_{current_round}.csv to the "Upload Predictions" button
 ''')
