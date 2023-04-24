@@ -8,7 +8,7 @@ import json
 from scipy.stats import skew
 
 ERA_COL = "era"
-TARGET_COL = "target_nomi_v4_20"
+TARGET_COL = "target_cyrus_v4_20"
 DATA_TYPE_COL = "data_type"
 EXAMPLE_PREDS_COL = "example_preds"
 
