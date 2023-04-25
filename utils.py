@@ -8,7 +8,7 @@ import json
 from scipy.stats import skew
 
 ERA_COL = "era"
-TARGET_COL = "target_nomi_v4_20"
+TARGET_COL = "target_cyrus_v4_20"
 DATA_TYPE_COL = "data_type"
 EXAMPLE_PREDS_COL = "example_preds"
 
@@ -172,6 +172,19 @@ def unif(df):
     return pd.Series(x, index=df.index)
 
 
+def numerai_corr(preds, target):
+    # rank (keeping ties) then gaussianize predictions to standardize prediction distributions
+    ranked_preds = (preds.rank(method="average").values - 0.5) / preds.count()
+    gauss_ranked_preds = scipy.stats.norm.ppf(ranked_preds)
+    # center targets around 0
+    centered_target = target - target.mean()
+    # raise both preds and target to the power of 1.5 to accentuate the tails
+    preds_p15 = np.sign(gauss_ranked_preds) * np.abs(gauss_ranked_preds) ** 1.5
+    target_p15 = np.sign(centered_target) * np.abs(centered_target) ** 1.5
+    # finally return the Pearson correlation
+    return np.corrcoef(preds_p15, target_p15)[0, 1]
+
+
 def get_feature_neutral_mean(
     df, prediction_col, target_col, features_for_neutralization=None
 ):
@@ -182,7 +195,7 @@ def get_feature_neutral_mean(
     )[prediction_col]
     scores = (
         df.groupby("era")
-        .apply(lambda x: (unif(x["neutral_sub"]).corr(x[target_col])))
+        .apply(lambda x: numerai_corr(x["neutral_sub"], x[target_col]))
         .mean()
     )
     return np.mean(scores)
@@ -202,7 +215,7 @@ def get_feature_neutral_mean_tb_era(
     temp_df_argsort = temp_df.loc[:, "neutral_sub"].argsort()
     temp_df_tb_idx = pd.concat([temp_df_argsort.iloc[:tb], temp_df_argsort.iloc[-tb:]])
     temp_df_tb = temp_df.loc[temp_df_tb_idx]
-    tb_fnc = unif(temp_df_tb["neutral_sub"]).corr(temp_df_tb[target_col])
+    tb_fnc = numerai_corr(temp_df_tb["neutral_sub"], temp_df_tb[target_col])
     return tb_fnc
 
 
@@ -215,12 +228,12 @@ def fast_score_by_date(df, columns, target, tb=None, era_col="era"):
         era_target = np.float64(df_era[target].values.T)
 
         if tb is None:
-            ccs = np.corrcoef(era_target, era_pred)[0, 1:]
+            ccs = numerai_corr(era_pred, era_target)
         else:
             tbidx = np.argsort(era_pred, axis=1)
             tbidx = np.concatenate([tbidx[:, :tb], tbidx[:, -tb:]], axis=1)
             ccs = [
-                np.corrcoef(era_target[tmpidx], tmppred[tmpidx])[0, 1]
+                numerai_corr(pd.Series(era_target[tmpidx]), pd.Series(tmppred[tmpidx]))
                 for tmpidx, tmppred in zip(tbidx, era_pred)
             ]
             ccs = np.array(ccs)
@@ -251,7 +264,7 @@ def validation_metrics(
     for pred_col in pred_cols:
         # Check the per-era correlations on the validation set (out of sample)
         validation_correlations = validation_data.groupby(ERA_COL).apply(
-            lambda d: unif(d[pred_col]).corr(d[target_col])
+            lambda d: numerai_corr(d[pred_col], d[target_col])
         )
 
         mean = validation_correlations.mean()
