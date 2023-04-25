@@ -233,7 +233,7 @@ def fast_score_by_date(df, columns, target, tb=None, era_col="era"):
             tbidx = np.argsort(era_pred, axis=1)
             tbidx = np.concatenate([tbidx[:, :tb], tbidx[:, -tb:]], axis=1)
             ccs = [
-                numerai_corr(era_target[tmpidx], tmppred[tmpidx])
+                numerai_corr(pd.Series(era_target[tmpidx]), pd.Series(tmppred[tmpidx]))
                 for tmpidx, tmppred in zip(tbidx, era_pred)
             ]
             ccs = np.array(ccs)
