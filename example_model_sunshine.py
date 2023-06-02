@@ -28,7 +28,7 @@ current_round = napi.get_current_round()
 # and validation data only change periodically, so no need to download them every time.
 print("Downloading dataset files...")
 dataset_name = "v4.1"
-feature_set_name = "small"
+feature_set_name = "medium"
 
 Path(f"./{dataset_name}").mkdir(parents=False, exist_ok=True)
 
@@ -117,7 +117,6 @@ live_data[features] = live_data[features].astype("int8")  # make sure change to 
 #          "colsample_bytree": 0.1}
 
 # recommended params
-params_name = f"lg_lgbm"
 params = {
     "n_estimators": 2000,
     "learning_rate": 0.1,
@@ -125,6 +124,7 @@ params = {
     "num_leaves": 2**5,
     "colsample_bytree": 0.1,
 }
+params_name = f"lgbm_{params['n_estimators']}_{params['max_depth']}d"
 
 # loop through all of our favorite targets and build models on each of them - one over training data, one over all available data
 # for the train_data models, we'll then predict on validation data

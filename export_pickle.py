@@ -129,7 +129,7 @@ def predict(live_data):
 
     model_to_submit = f"half_neutral_equal_weight"
     live_data["prediction"] = live_data[model_to_submit].rank(pct=True)
-    return live_data["prediction"]
+    return live_data.to_frame("prediction")
 
 # test predict method
 predictions = predict(live_data)
