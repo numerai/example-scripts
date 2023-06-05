@@ -12,21 +12,21 @@ Need help? Find us on Discord:
 These these notebooks run on Google Colab's free tier.
 
 ### Hello Numerai
-<a target="_blank" href="https://colab.research.google.com/github/numerai/hello-numerai/blob/master/hello_numerai.ipynb">
+<a target="_blank" href="https://colab.research.google.com/github/numerai/example-scripts/blob/master/hello_numerai.ipynb">
   <img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"/>
 </a>
 
 Start here if you are new! Explore the dataset and build your first model. 
  
 ### Analysis and Tips
-<a target="_blank" href="https://colab.research.google.com/github/numerai/hello-numerai/blob/master/analysis_and_tips.ipynb">
+<a target="_blank" href="https://colab.research.google.com/github/numerai/example-scripts/blob/master/analysis_and_tips.ipynb">
   <img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"/>
 </a>
 
 Best practices and common mistakes to avoid when apply machine learning to Numerai's dataset.
 
 ### Model Upload
-<a target="_blank" href="https://colab.research.google.com/github/numerai/hello-numerai/blob/master/model_upload.ipynb">
+<a target="_blank" href="https://colab.research.google.com/github/numerai/example-scripts/blob/master/model_upload.ipynb">
   <img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"/>
 </a>
 
