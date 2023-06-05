@@ -93,6 +93,7 @@ ENV/
 *.parquet
 *.pkl
 *.json
+*.model
 
 .idea
 example_model.xgb
