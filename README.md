@@ -9,7 +9,7 @@ Need help? Find us on Discord:
 
 ## Notebooks 
 
-These these notebooks run on Google Colab's free tier.
+Try running these notebooks on Google Colab's free tier!
 
 ### Hello Numerai
 <a target="_blank" href="https://colab.research.google.com/github/numerai/example-scripts/blob/master/hello_numerai.ipynb">
@@ -49,7 +49,7 @@ python example_model.py
 python example_model_advanced.py
 ```
 
-### Train latest example model training on v4.1 data 
+### Train latest example model training on v4.1 data in int8 format 
 ```
 python example_model_sunshine.py
 ```
