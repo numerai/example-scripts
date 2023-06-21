@@ -17,7 +17,14 @@ Try running these notebooks on Google Colab's free tier!
 </a>
 
 Start here if you are new! Explore the dataset and build your first model. 
- 
+
+### Feature Neutralization
+<a target="_blank" href="https://colab.research.google.com/github/numerai/example-scripts/blob/master/feature_neutralization.ipynb">
+  <img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"/>
+</a>
+
+Explore the tradeoff between risk and performance. Learn how to measure risk with feature exposure and control it with feature neutralization.
+
 ### Analysis and Tips
 <a target="_blank" href="https://colab.research.google.com/github/numerai/example-scripts/blob/master/analysis_and_tips.ipynb">
   <img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"/>
