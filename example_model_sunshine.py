@@ -109,22 +109,22 @@ live_data[features] = live_data[features].astype("int8")  # make sure change to 
 
 
 # small fast params
-params_name = "sm_lgbm"
-params = {"n_estimators": 2000,
-          "learning_rate": 0.01,
-          "max_depth": 5,
-          "num_leaves": 2 ** 5,
-          "colsample_bytree": 0.1}
+#params_name = "sm_lgbm"
+#params = {"n_estimators": 2000,
+#          "learning_rate": 0.01,
+#          "max_depth": 5,
+#          "num_leaves": 2 ** 5,
+#          "colsample_bytree": 0.1}
 
 # recommended params
-# params_name = "lg_lgbm"
-# params = {
-#     "n_estimators": 20000,
-#     "learning_rate": 0.001,
-#     "max_depth": 6,
-#     "num_leaves": 2**6,
-#     "colsample_bytree": 0.1,
-# }
+params = {
+    "n_estimators": 2000,
+    "learning_rate": 0.1,
+    "max_depth": 5,
+    "num_leaves": 2**5,
+    "colsample_bytree": 0.1,
+}
+params_name = f"lgbm_{params['n_estimators']}_{params['max_depth']}d"
 
 # loop through all of our favorite targets and build models on each of them - one over training data, one over all available data
 # for the train_data models, we'll then predict on validation data
