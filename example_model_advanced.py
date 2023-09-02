@@ -46,7 +46,15 @@ current_round = napi.get_current_round()
 Path("./v4").mkdir(parents=False, exist_ok=True)
 napi.download_dataset("v4/train.parquet")
 napi.download_dataset("v4/features.json")
+# download current_round 'live', 'validation', 'live_example' and 'validation_example'
+# data tagged with current_round value as these files change every week refer https://numer.ai/data/v4
+napi.download_dataset("v4/live.parquet", f"v4/live_{current_round}.parquet")
+napi.download_dataset("v4/validation.parquet", f"v4/validation_{current_round}.parquet")
+napi.download_dataset("v4/live_example_preds.parquet", f"v4/live_example_preds_{current_round}.parquet")
+napi.download_dataset("v4/validation_example_preds.parquet", f"v4/validation_example_preds_{current_round}.parquet")
 
+
+example_preds = pd.read_parquet(f'v4/live_example_preds_{current_round}.parquet')
 
 print("Entering model selection loop.  This may take awhile.")
 if model_selection_loop:
@@ -197,13 +205,13 @@ else:
 gc.collect()
 
 print("reading tournament_data")
-live_data = pd.read_parquet('v4/live.parquet')
+live_data = pd.read_parquet(f'v4/live_{current_round}.parquet')
 print("reading validation_data")
-validation_data = pd.read_parquet('v4/validation.parquet')
+validation_data = pd.read_parquet(f'v4/validation_{current_round}.parquet')
 print("reading example_predictions")
-example_preds = pd.read_parquet('v4/live_example_preds.parquet')
+example_preds = pd.read_parquet(f'v4/live_example_preds_{current_round}.parquet')
 print("reading example_validaton_predictions")
-validation_example_preds = pd.read_parquet('v4/validation_example_preds.parquet')
+validation_example_preds = pd.read_parquet(f'v4/validation_example_preds_{current_round}.parquet')
 # set the example predictions
 validation_data[EXAMPLE_PREDS_COL] = validation_example_preds["prediction"]
 
