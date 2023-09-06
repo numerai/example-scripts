@@ -33,7 +33,7 @@ Learn how to measure feature risk and control it with feature neutralization.
 Learn how to create an ensemble trained on different targets.
 
 ### Model Upload
-<a target="_blank" href="https://colab.research.google.com/github/numerai/example-scripts/blob/master/model_upload.ipynb">
+<a target="_blank" href="https://colab.research.google.com/github/numerai/example-scripts/blob/master/example_model.ipynb">
   <img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"/>
 </a>
 
