@@ -23,7 +23,7 @@ Start here if you are new! Explore the dataset and build your first model.
   <img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"/>
 </a>
 
-Explore the tradeoff between risk and performance. Learn how to measure risk with feature exposure and control it with feature neutralization.
+Learn how to measure feature risk and control it with feature neutralization.
 
 ### Target Ensemble
 <a target="_blank" href="https://colab.research.google.com/github/numerai/example-scripts/blob/master/target_ensemble.ipynb">
