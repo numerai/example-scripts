@@ -49,7 +49,7 @@ pandas==1.4.1
     # via
     #   -r requirements.in
     #   numerapi
-pillow==9.0.1
+pillow==10.0.1
     # via matplotlib
 pyarrow==7.0.0
     # via -r requirements.in
@@ -93,7 +93,9 @@ termcolor==1.1.0
 threadpoolctl==3.1.0
     # via scikit-learn
 tqdm==4.63.0
-    # via numerapi
+    # via
+    #   -r requirements.in
+    #   numerapi
 urllib3==1.26.9
     # via requests
 wheel==0.37.1
