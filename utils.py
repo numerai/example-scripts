@@ -1,3 +1,11 @@
+#
+# This code is soft-deprecated. It is recommended that you use
+# the numerai-tools package instead:
+# https://github.com/numerai/numerai-tools
+#
+# See the notebooks for examples.
+#
+
 import numpy as np
 import pandas as pd
 import scipy
@@ -115,7 +123,13 @@ def get_time_series_cross_val_splits(data, cv=3, embargo=12):
 
 
 def neutralize(
-    df, columns, neutralizers=None, proportion=1.0, normalize=True, era_col="era", verbose=False
+    df,
+    columns,
+    neutralizers=None,
+    proportion=1.0,
+    normalize=True,
+    era_col="era",
+    verbose=False,
 ):
     if neutralizers is None:
         neutralizers = []
