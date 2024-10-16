@@ -57,13 +57,13 @@ jobs:
           rm hello_numerai.html
           rm feature_neutralization.html
           rm target_ensemble.html
-      - name: move-pickles-to-pickles-dir
+      - name: move-pickles-to-cached-pickles-dir
         run: |
-          mkdir -p pickles/
-          mv -f example_model.pkl pickles/
-          mv -f hello_numerai.pkl pickles/
-          mv -f feature_neutralization.pkl pickles/
-          mv -f target_ensemble.pkl pickles/
+          mkdir -p cached-pickles/
+          mv -f example_model.pkl cached-pickles/
+          mv -f hello_numerai.pkl cached-pickles/
+          mv -f feature_neutralization.pkl cached-pickles/
+          mv -f target_ensemble.pkl cached-pickles/
       - name: commit-to-master
         uses: EndBug/add-and-commit@v9
         with:
