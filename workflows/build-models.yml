@@ -1,0 +1,74 @@
+name: Build Example Model Pickles
+
+on:
+  workflow_dispatch:
+  push:
+    # paths:
+    #   - example_model.ipynb
+    #   - hello_numerai.ipynb
+    #   - feature_neutralization.ipynb
+    #   - target_ensemble.ipynb
+    branches:
+      - master
+
+concurrency: build-example-models
+
+jobs:
+
+  build_and_test:
+    name: "Build Example Model Pickles"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install jupyter
+        run: |
+          python -m pip install --upgrade pip
+          pip install jupyter
+      - name: build-example-model
+        run: |
+          jupyter nbconvert \
+            --execute example_model.ipynb \
+            --ExecutePreprocessor.timeout=-1 \
+            --to html
+      - name: build-hello-numerai
+        run: |
+          jupyter nbconvert \
+            --execute hello_numerai.ipynb \
+            --ExecutePreprocessor.timeout=-1 \
+            --to html
+      - name: build-feature-neutralization
+        run: |
+          jupyter nbconvert \
+            --execute feature_neutralization.ipynb \
+            --ExecutePreprocessor.timeout=-1 \
+            --to html
+      - name: build-target-ensemble
+        run: |
+          jupyter nbconvert \
+            --execute target_ensemble.ipynb \
+            --ExecutePreprocessor.timeout=-1 \
+            --to html
+      - name: delete-html
+        run: |
+          rm example_model.html
+          rm hello_numerai.html
+          rm feature_neutralization.html
+          rm target_ensemble.html
+      - name: move-pickles-to-pickles-dir
+        run: |
+          mkdir -p pickles/
+          mv -f example_model.pkl pickles/
+          mv -f hello_numerai.pkl pickles/
+          mv -f feature_neutralization.pkl pickles/
+          mv -f target_ensemble.pkl pickles/
+      - name: commit-to-master
+        uses: EndBug/add-and-commit@v9
+        with:
+          add: |
+            example_model.html
+            hello_numerai.html
+            feature_neutralization.html
+            target_ensemble.html
