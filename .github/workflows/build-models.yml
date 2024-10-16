@@ -67,8 +67,4 @@ jobs:
       - name: commit-to-master
         uses: EndBug/add-and-commit@v9
         with:
-          add: |
-            example_model.html
-            hello_numerai.html
-            feature_neutralization.html
-            target_ensemble.html
+          add: "cached-pickles/*"
