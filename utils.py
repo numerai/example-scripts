@@ -1,5 +1,5 @@
 #
-# This code is soft-deprecated. It is recommended that you use
+# This code is deprecated. It is recommended that you use
 # the numerai-tools package instead:
 # https://github.com/numerai/numerai-tools
 #
@@ -316,17 +316,17 @@ def validation_metrics(
                 lambda d: d[feature_cols].corrwith(d[pred_col]).abs().max()
             )
             max_feature_exposure = max_per_era.mean()
-            validation_stats.loc[
-                "max_feature_exposure", pred_col
-            ] = max_feature_exposure
+            validation_stats.loc["max_feature_exposure", pred_col] = (
+                max_feature_exposure
+            )
 
             # Check feature neutral mean
             feature_neutral_mean = get_feature_neutral_mean(
                 validation_data, pred_col, target_col, features_for_neutralization
             )
-            validation_stats.loc[
-                "feature_neutral_mean", pred_col
-            ] = feature_neutral_mean
+            validation_stats.loc["feature_neutral_mean", pred_col] = (
+                feature_neutral_mean
+            )
 
             # Check TB200 feature neutral mean
             tb200_feature_neutral_mean_era = validation_data.groupby(ERA_COL).apply(
@@ -334,9 +334,9 @@ def validation_metrics(
                     df, pred_col, target_col, 200, features_for_neutralization
                 )
             )
-            validation_stats.loc[
-                "tb200_feature_neutral_mean", pred_col
-            ] = tb200_feature_neutral_mean_era.mean()
+            validation_stats.loc["tb200_feature_neutral_mean", pred_col] = (
+                tb200_feature_neutral_mean_era.mean()
+            )
 
             # Check top and bottom 200 metrics (TB200)
             tb200_validation_correlations = fast_score_by_date(
@@ -372,9 +372,9 @@ def validation_metrics(
             lambda d: unif(d[pred_col]).corr(unif(d[example_col]))
         )
         corr_with_example_preds = per_era_corrs.mean()
-        validation_stats.loc[
-            "corr_with_example_preds", pred_col
-        ] = corr_with_example_preds
+        validation_stats.loc["corr_with_example_preds", pred_col] = (
+            corr_with_example_preds
+        )
 
         # Check exposure dissimilarity per era
         tdf = validation_data.groupby(ERA_COL).apply(
