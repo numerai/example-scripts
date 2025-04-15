@@ -1,33 +1,30 @@
-#
-# This code is deprecated. It is recommended that you use
-# the numerai-tools package instead:
-# https://github.com/numerai/numerai-tools
-#
-# See the notebooks for examples.
-#
+"""
+THIS MODULE IS DEPRECATED. Use numerai-tools:
+https://github.com/numerai/numerai-tools
+
+If there is a feature missing from numerai-tools, please
+open an issue with a link to the function in this file you'd
+like to see.
+"""
 
 import numpy as np
 import pandas as pd
 import scipy
-from halo import Halo
 from tqdm import tqdm
 from pathlib import Path
 import json
-from scipy.stats import skew
 
 ERA_COL = "era"
 TARGET_COL = "target_cyrus_v4_20"
 DATA_TYPE_COL = "data_type"
 EXAMPLE_PREDS_COL = "example_preds"
-
-spinner = Halo(text="", spinner="dots")
-
 MODEL_FOLDER = "models"
 MODEL_CONFIGS_FOLDER = "model_configs"
 PREDICTION_FILES_FOLDER = "prediction_files"
 
 
 def save_prediction(df, name):
+    """DEPRECATED"""
     try:
         Path(PREDICTION_FILES_FOLDER).mkdir(exist_ok=True, parents=True)
     except Exception as ex:
@@ -36,6 +33,7 @@ def save_prediction(df, name):
 
 
 def save_model(model, name):
+    """DEPRECATED"""
     try:
         Path(MODEL_FOLDER).mkdir(exist_ok=True, parents=True)
     except Exception as ex:
@@ -44,6 +42,7 @@ def save_model(model, name):
 
 
 def load_model(name):
+    """DEPRECATED"""
     path = Path(f"{MODEL_FOLDER}/{name}.pkl")
     if path.is_file():
         model = pd.read_pickle(f"{MODEL_FOLDER}/{name}.pkl")
@@ -53,6 +52,7 @@ def load_model(name):
 
 
 def save_model_config(model_config, model_name):
+    """DEPRECATED"""
     try:
         Path(MODEL_CONFIGS_FOLDER).mkdir(exist_ok=True, parents=True)
     except Exception as ex:
@@ -62,6 +62,7 @@ def save_model_config(model_config, model_name):
 
 
 def load_model_config(model_name):
+    """DEPRECATED"""
     path_str = f"{MODEL_CONFIGS_FOLDER}/{model_name}.json"
     path = Path(path_str)
     if path.is_file():
@@ -73,6 +74,7 @@ def load_model_config(model_name):
 
 
 def get_biggest_change_features(corrs, n):
+    """DEPRECATED"""
     all_eras = corrs.index.sort_values()
     h1_eras = all_eras[: len(all_eras) // 2]
     h2_eras = all_eras[len(all_eras) // 2 :]
@@ -86,6 +88,7 @@ def get_biggest_change_features(corrs, n):
 
 
 def get_time_series_cross_val_splits(data, cv=3, embargo=12):
+    """DEPRECATED"""
     all_train_eras = data[ERA_COL].unique()
     len_split = len(all_train_eras) // cv
     test_splits = [
@@ -131,6 +134,7 @@ def neutralize(
     era_col="era",
     verbose=False,
 ):
+    """DEPRECATED"""
     if neutralizers is None:
         neutralizers = []
     unique_eras = df[era_col].unique()
@@ -165,6 +169,7 @@ def neutralize(
 
 
 def neutralize_series(series, by, proportion=1.0):
+    """DEPRECATED"""
     scores = series.values.reshape(-1, 1)
     exposures = by.values.reshape(-1, 1)
 
@@ -182,11 +187,13 @@ def neutralize_series(series, by, proportion=1.0):
 
 
 def unif(df):
+    """DEPRECATED"""
     x = (df.rank(method="first") - 0.5) / len(df)
     return pd.Series(x, index=df.index)
 
 
 def numerai_corr(preds, target):
+    """DEPRECATED"""
     # rank (keeping ties) then gaussianize predictions to standardize prediction distributions
     ranked_preds = (preds.rank(method="average").values - 0.5) / preds.count()
     gauss_ranked_preds = scipy.stats.norm.ppf(ranked_preds)
@@ -202,6 +209,7 @@ def numerai_corr(preds, target):
 def get_feature_neutral_mean(
     df, prediction_col, target_col, features_for_neutralization=None
 ):
+    """DEPRECATED"""
     if features_for_neutralization is None:
         features_for_neutralization = [c for c in df.columns if c.startswith("feature")]
     df.loc[:, "neutral_sub"] = neutralize(
@@ -218,6 +226,7 @@ def get_feature_neutral_mean(
 def get_feature_neutral_mean_tb_era(
     df, prediction_col, target_col, tb, features_for_neutralization=None
 ):
+    """DEPRECATED"""
     if features_for_neutralization is None:
         features_for_neutralization = [c for c in df.columns if c.startswith("feature")]
     temp_df = df.reset_index(
@@ -234,6 +243,7 @@ def get_feature_neutral_mean_tb_era(
 
 
 def fast_score_by_date(df, columns, target, tb=None, era_col="era"):
+    """DEPRECATED"""
     unique_eras = df[era_col].unique()
     computed = []
     for u in unique_eras:
@@ -258,6 +268,7 @@ def fast_score_by_date(df, columns, target, tb=None, era_col="era"):
 
 
 def exposure_dissimilarity_per_era(df, prediction_col, example_col, feature_cols=None):
+    """DEPRECATED"""
     if feature_cols is None:
         feature_cols = [c for c in df.columns if c.startswith("feature")]
     u = df.loc[:, feature_cols].corrwith(df[prediction_col])
@@ -273,6 +284,7 @@ def validation_metrics(
     target_col=TARGET_COL,
     features_for_neutralization=None,
 ):
+    """DEPRECATED"""
     validation_stats = pd.DataFrame()
     feature_cols = [c for c in validation_data if c.startswith("feature_")]
     for pred_col in pred_cols:
