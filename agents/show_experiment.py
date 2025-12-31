@@ -1,0 +1,350 @@
+"""Display experiment results and plot per-era correlation curves."""
+
+from __future__ import annotations
+
+import argparse
+import json
+from pathlib import Path
+import re
+from typing import Iterable
+
+import numpy as np
+import pandas as pd
+
+try:
+    import matplotlib.pyplot as plt
+except ImportError as exc:  # pragma: no cover
+    raise SystemExit(
+        "matplotlib is required. Install with `.venv/bin/pip install matplotlib`."
+    ) from exc
+
+import numerai_metrics
+
+
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(
+        description="Display experiment metrics and plot OOF correlation curves."
+    )
+    parser.add_argument(
+        "base_model",
+        type=str,
+        help="Baseline model name (results/predictions file stem).",
+    )
+    parser.add_argument(
+        "experiment_models",
+        nargs="+",
+        help="One or more experiment model names to compare.",
+    )
+    parser.add_argument(
+        "--output-dir",
+        type=Path,
+        default=Path(__file__).resolve().parent / "experiments" / "feature_set_experiments",
+        help="Experiment output directory (contains results/ and predictions/).",
+    )
+    parser.add_argument(
+        "--baselines-dir",
+        type=Path,
+        default=Path(__file__).resolve().parent / "baselines",
+        help="Baselines output directory (contains results/ and predictions/).",
+    )
+    parser.add_argument(
+        "--target-col",
+        type=str,
+        default="target",
+        help="Target column name in predictions file.",
+    )
+    parser.add_argument(
+        "--era-col",
+        type=str,
+        default="era",
+        help="Era column name in predictions file.",
+    )
+    parser.add_argument(
+        "--pred-col",
+        type=str,
+        default="prediction",
+        help="Prediction column name in predictions file.",
+    )
+    parser.add_argument(
+        "--id-col",
+        type=str,
+        default="id",
+        help="ID column name in predictions file.",
+    )
+    return parser.parse_args()
+
+
+def _slug(text: str) -> str:
+    return re.sub(r"[^A-Za-z0-9_-]+", "_", text)
+
+
+def _sort_era_index(series: pd.Series) -> pd.Series:
+    try:
+        order = sorted(series.index, key=lambda x: int(x))
+        return series.loc[order]
+    except (TypeError, ValueError):
+        return series.sort_index()
+
+
+def _resolve_results_path(
+    output_dir: Path, name: str, fallback_dir: Path | None = None
+) -> Path | None:
+    for base_dir in [output_dir, fallback_dir]:
+        if base_dir is None:
+            continue
+        path = base_dir / "results" / f"{name}.json"
+        if path.exists():
+            return path
+    return None
+
+
+def _resolve_predictions_path(
+    output_dir: Path, name: str, fallback_dir: Path | None = None
+) -> Path:
+    for base_dir in [output_dir, fallback_dir]:
+        if base_dir is None:
+            continue
+        results_path = _resolve_results_path(base_dir, name)
+        if results_path:
+            data = json.loads(results_path.read_text())
+            rel_path = data.get("output", {}).get("predictions_file")
+            if rel_path:
+                candidate = base_dir / rel_path
+                if candidate.exists():
+                    return candidate
+        default_path = base_dir / "predictions" / f"{name}.parquet"
+        if default_path.exists():
+            return default_path
+    raise FileNotFoundError(f"Predictions not found for {name}.")
+
+
+def _load_predictions(
+    path: Path,
+    pred_col: str,
+    target_col: str,
+    era_col: str,
+    id_col: str,
+) -> pd.DataFrame:
+    required = [pred_col, target_col, era_col, id_col]
+    return pd.read_parquet(path, columns=required)
+
+
+def _per_era_corr(
+    df: pd.DataFrame, pred_col: str, target_col: str, era_col: str
+) -> pd.Series:
+    per_era = numerai_metrics.per_era_corr(df, [pred_col], target_col, era_col=era_col)
+    if isinstance(per_era, pd.DataFrame):
+        series = per_era[pred_col]
+    else:
+        series = per_era.squeeze()
+    return _sort_era_index(series)
+
+
+def _per_era_bmc(
+    df: pd.DataFrame,
+    pred_col: str,
+    target_col: str,
+    era_col: str,
+    id_col: str,
+    benchmark: pd.DataFrame,
+    benchmark_col: str,
+) -> pd.Series:
+    enriched = numerai_metrics.attach_benchmark_predictions(
+        df,
+        benchmark,
+        benchmark_col,
+        era_col=era_col,
+        id_col=id_col,
+    )
+    per_era = numerai_metrics.per_era_bmc(
+        enriched,
+        [pred_col],
+        benchmark_col,
+        target_col,
+        era_col=era_col,
+    )
+    if isinstance(per_era, pd.DataFrame):
+        series = per_era[pred_col]
+    else:
+        series = per_era.squeeze()
+    return _sort_era_index(series)
+
+
+def _load_metrics(results_path: Path) -> dict:
+    data = json.loads(results_path.read_text())
+    metrics = data.get("metrics", {})
+    bmc = metrics.get("bmc_last_200_eras", {})
+    small = metrics.get("small_bmc_last200", {})
+    corr = metrics.get("corr", {})
+    return {
+        "model": results_path.stem,
+        "feature_set": data.get("data", {}).get("feature_set"),
+        "bmc_mean": bmc.get("mean"),
+        "bmc_sharpe": bmc.get("sharpe"),
+        "bmc_consistency": bmc.get("consistency"),
+        "bmc_drawdown": bmc.get("max_drawdown"),
+        "bmc_avg_corr_bench": bmc.get("avg_corr_with_benchmark"),
+        "small_bmc_mean": small.get("mean"),
+        "small_bmc_sharpe": small.get("sharpe"),
+        "small_bmc_consistency": small.get("consistency"),
+        "small_bmc_drawdown": small.get("max_drawdown"),
+        "small_bmc_avg_corr_bench": small.get("avg_corr_with_benchmark"),
+        "corr_mean": corr.get("mean"),
+        "corr_sharpe": corr.get("sharpe"),
+    }
+
+
+def _format_table(df: pd.DataFrame) -> str:
+    return df.to_string(
+        index=False,
+        float_format=lambda x: f"{x:.6f}",
+    )
+
+
+def _plot_curves(
+    base_name: str,
+    base_cumsum: pd.Series,
+    model_cumsums: dict[str, pd.Series],
+    bmc_cumsums: dict[str, pd.Series],
+    output_dir: Path,
+) -> Path:
+    rows = 3 if bmc_cumsums else 2
+    fig, axes = plt.subplots(rows, 1, figsize=(12, 4 * rows), sharex=True)
+    if rows == 1:
+        axes = [axes]
+
+    axes[0].plot(base_cumsum.index, base_cumsum.values, label=base_name, linewidth=2)
+    for name, series in model_cumsums.items():
+        axes[0].plot(series.index, series.values, label=name, alpha=0.8)
+    axes[0].set_title("Cumulative per-era correlation (OOF)")
+    axes[0].set_ylabel("Cumsum corr")
+    axes[0].legend()
+    axes[0].grid(True, alpha=0.3)
+
+    for name, series in model_cumsums.items():
+        common = base_cumsum.index.intersection(series.index)
+        delta = series.loc[common] - base_cumsum.loc[common]
+        axes[1].plot(delta.index, delta.values, label=f"{name} - {base_name}", alpha=0.8)
+    axes[1].axhline(0, color="black", linewidth=1, alpha=0.5)
+    axes[1].set_title("Delta vs baseline (cumsum corr)")
+    axes[1].set_ylabel("Delta cumsum corr")
+    axes[1].legend()
+    axes[1].grid(True, alpha=0.3)
+
+    if bmc_cumsums:
+        axes[2].plot(
+            bmc_cumsums[base_name].index,
+            bmc_cumsums[base_name].values,
+            label=base_name,
+            linewidth=2,
+        )
+        for name, series in bmc_cumsums.items():
+            if name == base_name:
+                continue
+            axes[2].plot(series.index, series.values, label=name, alpha=0.8)
+        axes[2].set_title("Cumulative per-era BMC (OOF)")
+        axes[2].set_ylabel("Cumsum BMC")
+        axes[2].legend()
+        axes[2].grid(True, alpha=0.3)
+
+    plt.tight_layout()
+    plots_dir = output_dir / "plots"
+    plots_dir.mkdir(parents=True, exist_ok=True)
+    stem = _slug(f"{base_name}_vs_{next(iter(model_cumsums))}")
+    if len(model_cumsums) > 1:
+        stem = f"{stem}_plus_{len(model_cumsums) - 1}"
+    plot_path = plots_dir / f"{stem}.png"
+    fig.savefig(plot_path, dpi=150)
+    return plot_path
+
+
+def main() -> None:
+    args = parse_args()
+    output_dir = args.output_dir.resolve()
+    baselines_dir = args.baselines_dir.resolve()
+
+    model_names = [args.base_model, *args.experiment_models]
+    metrics_rows = []
+    base_results_path = _resolve_results_path(
+        output_dir, args.base_model, baselines_dir
+    )
+    if not base_results_path:
+        raise FileNotFoundError(
+            f"Results not found for {args.base_model} in {output_dir / 'results'} or {baselines_dir / 'results'}"
+        )
+    metrics_rows.append(_load_metrics(base_results_path))
+    for name in args.experiment_models:
+        results_path = _resolve_results_path(output_dir, name)
+        if not results_path:
+            raise FileNotFoundError(
+                f"Results not found for {name} in {output_dir / 'results'}"
+            )
+        metrics_rows.append(_load_metrics(results_path))
+
+    metrics_df = pd.DataFrame(metrics_rows)
+    print("Model metrics:")
+    print(_format_table(metrics_df))
+
+    base_path = _resolve_predictions_path(
+        output_dir, args.base_model, baselines_dir
+    )
+    base_df = _load_predictions(
+        base_path, args.pred_col, args.target_col, args.era_col, args.id_col
+    )
+    base_corr = _per_era_corr(base_df, args.pred_col, args.target_col, args.era_col)
+    base_cumsum = base_corr.cumsum()
+
+    model_cumsums = {}
+    for name in args.experiment_models:
+        pred_path = _resolve_predictions_path(output_dir, name)
+        df = _load_predictions(
+            pred_path, args.pred_col, args.target_col, args.era_col, args.id_col
+        )
+        corr = _per_era_corr(df, args.pred_col, args.target_col, args.era_col)
+        model_cumsums[name] = corr.cumsum()
+
+    results_data = json.loads(base_results_path.read_text())
+    data_version = results_data.get("data", {}).get("data_version", "v5.2")
+    benchmark_model = results_data.get("benchmark", {}).get("model", "ender20")
+    benchmark, benchmark_col = numerai_metrics.load_benchmark_predictions(
+        data_version,
+        split="full",
+        benchmark_model=benchmark_model,
+        era_col=args.era_col,
+    )
+
+    bmc_cumsums = {}
+    base_bmc = _per_era_bmc(
+        base_df,
+        args.pred_col,
+        args.target_col,
+        args.era_col,
+        args.id_col,
+        benchmark,
+        benchmark_col,
+    )
+    bmc_cumsums[args.base_model] = base_bmc.cumsum()
+    for name in args.experiment_models:
+        pred_path = _resolve_predictions_path(output_dir, name)
+        df = _load_predictions(
+            pred_path, args.pred_col, args.target_col, args.era_col, args.id_col
+        )
+        bmc = _per_era_bmc(
+            df,
+            args.pred_col,
+            args.target_col,
+            args.era_col,
+            args.id_col,
+            benchmark,
+            benchmark_col,
+        )
+        bmc_cumsums[name] = bmc.cumsum()
+
+    plot_path = _plot_curves(
+        args.base_model, base_cumsum, model_cumsums, bmc_cumsums, output_dir
+    )
+    print(f"Saved plot to {plot_path}")
+
+
+if __name__ == "__main__":
+    main()
