@@ -10,6 +10,7 @@ from typing import Iterable
 
 import numpy as np
 import pandas as pd
+from matplotlib import ticker
 
 try:
     import matplotlib.pyplot as plt
@@ -18,9 +19,9 @@ except ImportError as exc:  # pragma: no cover
         "matplotlib is required. Install with `.venv/bin/pip install matplotlib`."
     ) from exc
 
-from agents.metrics import numerai_metrics
+from agents.utils.metrics import numerai_metrics
 
-AGENTS_DIR = Path(__file__).resolve().parents[1]
+AGENTS_DIR = Path(__file__).resolve().parents[2]
 
 
 def parse_args() -> argparse.Namespace:
@@ -72,6 +73,17 @@ def parse_args() -> argparse.Namespace:
         type=str,
         default="id",
         help="ID column name in predictions file.",
+    )
+    parser.add_argument(
+        "--dark",
+        action="store_true",
+        help="Use a dark theme for plots.",
+    )
+    parser.add_argument(
+        "--max-xticks",
+        type=int,
+        default=12,
+        help="Maximum number of x-axis ticks to show.",
     )
     return parser.parse_args()
 
@@ -217,21 +229,75 @@ def _format_table(df: pd.DataFrame) -> str:
     )
 
 
+def _apply_dark_theme(ax):
+    ax.set_facecolor("black")
+    ax.tick_params(axis="x", colors="white")
+    ax.tick_params(axis="y", colors="white")
+    for spine in ax.spines.values():
+        spine.set_color("white")
+    ax.title.set_color("white")
+    ax.xaxis.label.set_color("white")
+    ax.yaxis.label.set_color("white")
+    ax.grid(True, alpha=0.3, color="white")
+
+
+def _set_xticks(ax, index, max_ticks: int | None):
+    if max_ticks is None or max_ticks <= 0:
+        ax.tick_params(axis="x", rotation=45)
+        return
+    idx = list(index)
+    if not idx:
+        return
+    if len(idx) <= max_ticks:
+        ax.tick_params(axis="x", rotation=45)
+        return
+    step = max(1, len(idx) // max_ticks)
+    ticks = idx[::step]
+    if ticks and ticks[-1] != idx[-1]:
+        ticks.append(idx[-1])
+    ax.set_xticks(ticks)
+    ax.set_xticklabels([str(t) for t in ticks], rotation=45, ha="right")
+
+
 def _plot_curves(
     base_name: str,
     base_cumsum: pd.Series,
     model_cumsums: dict[str, pd.Series],
     bmc_cumsums: dict[str, pd.Series],
     output_dir: Path,
+    dark_mode: bool = False,
+    max_xticks: int | None = None,
 ) -> Path:
     rows = 3 if bmc_cumsums else 2
-    fig, axes = plt.subplots(rows, 1, figsize=(12, 4 * rows), sharex=True)
+    fig, axes = plt.subplots(
+        rows, 1, figsize=(12, 4 * rows), sharex=True, facecolor="black" if dark_mode else None
+    )
     if rows == 1:
         axes = [axes]
 
-    axes[0].plot(base_cumsum.index, base_cumsum.values, label=base_name, linewidth=2)
+    base_color = "white" if dark_mode else None
+    base_alpha = 0.5 if dark_mode else 1.0
+    model_colors: dict[str, str] = {}
+    if dark_mode and len(model_cumsums) == 1:
+        only_model = next(iter(model_cumsums))
+        model_colors[only_model] = "orange"
+    axes[0].plot(
+        base_cumsum.index,
+        base_cumsum.values,
+        label=base_name,
+        linewidth=2,
+        color=base_color,
+        alpha=base_alpha,
+    )
     for name, series in model_cumsums.items():
-        axes[0].plot(series.index, series.values, label=name, alpha=0.8)
+        axes[0].plot(
+            series.index,
+            series.values,
+            label=name,
+            linewidth=2 if name in model_colors else 1.5,
+            color=model_colors.get(name),
+            alpha=0.9 if dark_mode else 0.8,
+        )
     axes[0].set_title("Cumulative per-era correlation (OOF)")
     axes[0].set_ylabel("Cumsum corr")
     axes[0].legend()
@@ -240,8 +306,15 @@ def _plot_curves(
     for name, series in model_cumsums.items():
         common = base_cumsum.index.intersection(series.index)
         delta = series.loc[common] - base_cumsum.loc[common]
-        axes[1].plot(delta.index, delta.values, label=f"{name} - {base_name}", alpha=0.8)
-    axes[1].axhline(0, color="black", linewidth=1, alpha=0.5)
+        axes[1].plot(
+            delta.index,
+            delta.values,
+            label=f"{name} - {base_name}",
+            linewidth=2 if name in model_colors else 1.5,
+            color=model_colors.get(name),
+            alpha=0.9 if dark_mode else 0.8,
+        )
+    axes[1].axhline(0, color="white" if dark_mode else "black", linewidth=1, alpha=0.5)
     axes[1].set_title("Delta vs baseline (cumsum corr)")
     axes[1].set_ylabel("Delta cumsum corr")
     axes[1].legend()
@@ -253,15 +326,37 @@ def _plot_curves(
             bmc_cumsums[base_name].values,
             label=base_name,
             linewidth=2,
+            color=base_color,
+            alpha=base_alpha,
         )
         for name, series in bmc_cumsums.items():
             if name == base_name:
                 continue
-            axes[2].plot(series.index, series.values, label=name, alpha=0.8)
+            axes[2].plot(
+                series.index,
+                series.values,
+                label=name,
+                linewidth=2 if name in model_colors else 1.5,
+                color=model_colors.get(name),
+                alpha=0.9 if dark_mode else 0.8,
+            )
         axes[2].set_title("Cumulative per-era BMC (OOF)")
         axes[2].set_ylabel("Cumsum BMC")
         axes[2].legend()
         axes[2].grid(True, alpha=0.3)
+
+    if dark_mode:
+        for ax in axes:
+            _apply_dark_theme(ax)
+            legend = ax.get_legend()
+            if legend is not None:
+                legend.get_frame().set_facecolor("black")
+                legend.get_frame().set_edgecolor("white")
+                for text in legend.get_texts():
+                    text.set_color("white")
+
+    for ax in axes:
+        _set_xticks(ax, base_cumsum.index, max_xticks)
 
     plt.tight_layout()
     plots_dir = output_dir / "plots"
@@ -269,6 +364,8 @@ def _plot_curves(
     stem = _slug(f"{base_name}_vs_{next(iter(model_cumsums))}")
     if len(model_cumsums) > 1:
         stem = f"{stem}_plus_{len(model_cumsums) - 1}"
+    if dark_mode:
+        stem = f"{stem}_dark"
     plot_path = plots_dir / f"{stem}.png"
     fig.savefig(plot_path, dpi=150)
     return plot_path
@@ -379,7 +476,13 @@ def main() -> None:
         bmc_cumsums[name] = bmc.loc[common_bmc_eras].cumsum()
 
     plot_path = _plot_curves(
-        args.base_model, base_cumsum, model_cumsums, bmc_cumsums, output_dir
+        args.base_model,
+        base_cumsum,
+        model_cumsums,
+        bmc_cumsums,
+        output_dir,
+        dark_mode=args.dark,
+        max_xticks=args.max_xticks,
     )
     print(f"Saved plot to {plot_path}")
 

@@ -7,7 +7,7 @@ import numpy as np
 import pandas as pd
 from numerapi import NumerAPI
 
-from agents.metrics import numerai_metrics
+from agents.utils.metrics import numerai_metrics
 
 
 def load_features(napi: NumerAPI, data_version: str, feature_set: str) -> list[str]:

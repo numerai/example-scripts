@@ -8,7 +8,7 @@ from pathlib import Path
 
 import pandas as pd
 
-AGENTS_DIR = Path(__file__).resolve().parents[1]
+AGENTS_DIR = Path(__file__).resolve().parents[2]
 
 
 def parse_args() -> argparse.Namespace:

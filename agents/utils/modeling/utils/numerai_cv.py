@@ -7,14 +7,14 @@ from typing import Iterable, List, Sequence, Tuple
 import numpy as np
 import pandas as pd
 
-from agents.modeling.models.ranker import (
+from agents.utils.modeling.models.ranker import (
     build_group_key,
     build_ranker_labels,
     ensure_label_gain,
     prepare_ranker_data,
 )
-from agents.modeling.utils.era import build_era_weights
-from agents.modeling.utils.model_factory import build_model
+from agents.utils.modeling.utils.era import build_era_weights
+from agents.utils.modeling.utils.model_factory import build_model
 
 
 def _era_sort_key(era):

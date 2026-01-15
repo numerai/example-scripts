@@ -1,6 +1,6 @@
 ---
 name: numerai-model-implementation
-description: Add a new Numerai model type to the agents training pipeline. Use when you need to register a model in `agents/modeling/utils/model_factory.py`, handle fit/predict quirks in `agents/modeling/utils/numerai_cv.py`, and update configs so the model can run via `python -m agents.modeling`.
+description: Add a new Numerai model type to the agents training pipeline. Use when you need to register a model in `agents/utils/modeling/utils/model_factory.py`, handle fit/predict quirks in `agents/utils/modeling/utils/numerai_cv.py`, and update configs so the model can run via `python -m agents.utils.modeling`.
 ---
 
 # Numerai Model Implementation
@@ -12,11 +12,10 @@ Add a new model type so it can be selected in configs and trained/evaluated by t
 
 1. Define the model API and output shape.
    - Implement `fit(X, y, sample_weight=...)` and `predict(X)`.
-   - If the model is a classifier, provide `predict_proba(X)[:, 1]` for the positive class.
-   - Put custom wrappers in `agents/modeling/models/` so model-specific code stays isolated.
+   - Put custom wrappers in `agents/utils/modeling/models/` so model-specific code stays isolated.
    - Accept pandas DataFrames or convert to NumPy inside the model wrapper.
 
-2. Register the model constructor in `agents/modeling/utils/model_factory.py`.
+2. Register the model constructor in `agents/utils/modeling/utils/model_factory.py`.
    - Use lazy imports so optional dependencies do not break other workflows.
    - Raise a clear ImportError when the dependency is missing.
 
@@ -31,12 +30,7 @@ if model_type == "XGBRegressor":
     return XGBRegressor(**model_params)
 ```
 
-3. Handle special training/prediction logic in `agents/modeling/utils/numerai_cv.py`.
-   - For classifiers, extend the classifier detection and use `predict_proba`.
-   - For NumPy-only models, mirror the TabPFN conversion path (`.to_numpy()`).
-   - For rankers, follow the LGBMRanker path and ensure `ranker` config contains `grouping` and `label_bins`.
-
-4. Add or update a config to use the new model type.
+3. Add or update a config to use the new model type.
 
 ```python
 CONFIG = {
@@ -48,11 +42,11 @@ CONFIG = {
 }
 ```
 
-5. Add extra data columns if the model needs them.
-   - Update `load_and_prepare_data` in `agents/modeling/utils/pipeline.py` to pass extra columns into `load_full_data`.
+4. Add extra data columns if the model needs them.
+   - Update `load_and_prepare_data` in `agents/utils/modeling/utils/pipeline.py` to pass extra columns into `load_full_data`.
    - Add corresponding config entries so experiments stay reproducible.
 
 ## Validate
-- Run a smoke test: `.venv/bin/python -m agents.modeling --config <config_path>`.
+- Run a smoke test: `.venv/bin/python -m agents.utils.modeling --config <config_path>`.
 - Run metrics on the smoke test and make sure corr_mean is > 0.005 and < 0.04. If it's less then something is probably fundamentally wrong. If it's higher than there is likely leakage and you need to find the problem.
 - Run unit tests after refactors: `.venv/bin/python -m unittest`.

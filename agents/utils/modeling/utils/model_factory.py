@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import lightgbm as lgb
 
-from agents.modeling.models.lgbm_regressor import LGBMRegressor
-from agents.modeling.models.torch_mlp import TorchMLPRegressor
+from agents.utils.modeling.models.lgbm_regressor import LGBMRegressor
+from agents.utils.modeling.models.torch_mlp import TorchMLPRegressor
 
 
 def build_model(model_type: str, model_params: dict):

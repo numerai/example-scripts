@@ -18,9 +18,9 @@ except ImportError as exc:  # pragma: no cover
         "matplotlib is required. Install with `.venv/bin/pip install matplotlib`."
     ) from exc
 
-from agents.metrics import numerai_metrics
+from agents.utils.metrics import numerai_metrics
 
-AGENTS_DIR = Path(__file__).resolve().parents[1]
+AGENTS_DIR = Path(__file__).resolve().parents[2]
 
 
 DEFAULT_DATA_VERSION_V52 = "v5.2"

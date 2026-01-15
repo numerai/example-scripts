@@ -4,7 +4,7 @@ import json
 import unittest
 from pathlib import Path
 
-from agents.modeling.utils.pipeline import run_training
+from agents.utils.modeling.utils.pipeline import run_training
 
 
 class TestSmallLgbmEnder20Baseline(unittest.TestCase):
