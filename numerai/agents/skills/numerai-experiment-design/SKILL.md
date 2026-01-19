@@ -8,7 +8,7 @@ Use this workflow to plan, run, and report Numerai experiments for any model ide
 
 ## Planning checklist (answer before running)
 - State the model idea and novelty.
-- Choose the initial baseline and feature set (`small_lgbm_ender20_baseline` if there are lots of parameter sweeps that need to be done, or `deep_lgbm_ender20_baseline`) and make sure its predictions and results are populated, and build it if it's missing. Your experiments' feature_set must match the baseline chosen.
+- Choose the initial baseline and feature set. Default to `deep_lgbm_ender20_baseline` (feature_set=all) unless the user explicitly requests the small baseline; keep experiments' feature_set aligned with the chosen baseline.
 - Decide the primary metric for the phase (`small_bmc_mean` for small baseline, `bmc_mean` for deep baseline).
 - Decide which parameter dimensions to explore based on the core idea (targets, model hyperparameters, ensemble weights, data settings).
 - Or decide that no parameter sweeps are necessary because the idea is a small enough change that only one test is needed.
@@ -20,7 +20,7 @@ Core loop (repeat for each experiment round):
 3) Run training via `python -m agents.code.modeling --config <config> --output-dir <experiment_dir>`, which calls `pipeline.py` for CV/OOF + results.
 4) Update `experiment.md` with decisions + metrics, then proceed to the next step in this skill.
 
-## Scount -> Scale
+## Scout -> Scale
 1) **Use downsampled**: Use `v5.2/downsampled_full.parquet` + `v5.2/downsampled_full_benchmark_models.parquet` to save memory and time when experimenting.
 2) **Pick the sweep dimension that matches the core idea**: Run a focused sweep only when it serves the research question; otherwise run a single experiment config and evaluate.
 3) **Iterate until improvements stop**: Keep sweeping on that dimension while a round produces a new best metric. If a round does not improve, reassess or pivot.
@@ -44,9 +44,10 @@ Note that these are examples only. Each idea will call for different sweeps, or 
 - Track and compare per-round results; keep the best model and document why it won.
 
 ## Baseline alignment
-- Declare which baseline the model is aiming to improve on. 
+- Declare which baseline the model is aiming to improve on.
 - Keep `feature_set` aligned with the baseline for comparisons.
-- If small baseline, focus on small_bmc for assessment.  If deep baseline, focus on bmc for assessment. 
+- Default to ender20 (v52_lgbm_ender20) as the benchmark reference and plot baseline, even when sweeping; only use the small baseline when explicitly requested.
+- If small baseline, focus on small_bmc for assessment. If deep baseline, focus on bmc for assessment.
 
 ## Experiment organization
 - Keep related runs under a single, well-named folder in `agents/experiments/`.
@@ -60,7 +61,8 @@ Note that these are examples only. Each idea will call for different sweeps, or 
 
 ## Reporting expectations
 - Write a loop to continuously wait for your experiments to finish, so that you don't break your session and report prematurely.
-- Once you complete your research and stop finding improvements, write a report for the user. It should describe learnings (what worked and what did not), include the final stats table, and run `python -m agents.code.analysis.plot_benchmark_corrs` on the final model (share the output path).
+- Once you complete your research and stop finding improvements, write a report for the user. It should describe learnings (what worked and what did not), include the final stats table, and run `python -m agents.code.analysis.show_experiment benchmark <best_model> --base-benchmark-model v52_lgbm_ender20 --benchmark-data-path v5.2/full_benchmark_models.parquet --start-era 575 --dark --output-dir <experiment_dir> --baselines-dir baselines` to generate the cumulative corr + BMC plot (share the output path).
+- Use `python -m agents.code.analysis.plot_benchmark_corrs` only when comparing official benchmark model columns, not for experiment BMC curves.
 - Always report:
   - `bmc` (full) and `bmc_last_200_eras`
   - `small_bmc` (full) and `small_bmc_last200`

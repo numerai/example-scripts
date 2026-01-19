@@ -80,6 +80,33 @@ def parse_args() -> argparse.Namespace:
         help="Use a dark theme for plots.",
     )
     parser.add_argument(
+        "--base-benchmark-model",
+        type=str,
+        default=None,
+        help=(
+            "Use benchmark model predictions as the baseline instead of a results file. "
+            "Example: v52_lgbm_ender20. If set, base_model can be any label (e.g. 'benchmark')."
+        ),
+    )
+    parser.add_argument(
+        "--benchmark-data-path",
+        type=Path,
+        default=None,
+        help="Optional benchmark parquet path override.",
+    )
+    parser.add_argument(
+        "--benchmark-data-version",
+        type=str,
+        default=None,
+        help="Override data version when loading benchmark predictions.",
+    )
+    parser.add_argument(
+        "--start-era",
+        type=int,
+        default=575,
+        help="Minimum era to include in plots (inclusive).",
+    )
+    parser.add_argument(
         "--max-xticks",
         type=int,
         default=12,
@@ -222,6 +249,71 @@ def _load_metrics(results_path: Path) -> dict:
     }
 
 
+def _summary_row(summary: pd.Series, prefix: str) -> dict:
+    return {
+        f"{prefix}_mean": summary.get("mean"),
+        f"{prefix}_sharpe": summary.get("sharpe"),
+        f"{prefix}_consistency": summary.get("consistency"),
+        f"{prefix}_drawdown": summary.get("max_drawdown"),
+    }
+
+
+def _metrics_from_predictions(
+    name: str,
+    df: pd.DataFrame,
+    pred_col: str,
+    target_col: str,
+    era_col: str,
+    id_col: str,
+    benchmark: pd.DataFrame,
+    benchmark_col: str,
+) -> dict:
+    corr = numerai_metrics.per_era_corr(df, [pred_col], target_col, era_col=era_col)
+    corr_summary = numerai_metrics.summarize_scores(corr).loc[pred_col]
+
+    bmc_df = numerai_metrics.per_era_bmc(
+        df,
+        [pred_col],
+        benchmark_col,
+        target_col,
+        era_col=era_col,
+    )
+    bmc_summary = numerai_metrics.summarize_scores(bmc_df).loc[pred_col]
+    bmc_last = numerai_metrics.summarize_scores(
+        numerai_metrics._last_n_eras(bmc_df, 200)
+    ).loc[pred_col]
+
+    benchmark_corr = numerai_metrics.per_era_pred_corr(
+        df, [pred_col], benchmark_col, era_col=era_col
+    )
+    benchmark_corr_mean = benchmark_corr.mean().get(pred_col)
+    benchmark_corr_last = numerai_metrics._last_n_eras(benchmark_corr, 200).mean().get(
+        pred_col
+    )
+
+    row = {"model": name, "feature_set": None}
+    row.update(_summary_row(bmc_summary, "bmc"))
+    row["bmc_avg_corr_bench"] = benchmark_corr_mean
+    row.update(_summary_row(bmc_last, "bmc_last200"))
+    row["bmc_last200_avg_corr_bench"] = benchmark_corr_last
+    row.update(_summary_row(corr_summary, "corr"))
+    row.update(
+        {
+            "small_bmc_mean": np.nan,
+            "small_bmc_sharpe": np.nan,
+            "small_bmc_consistency": np.nan,
+            "small_bmc_drawdown": np.nan,
+            "small_bmc_avg_corr_bench": np.nan,
+            "small_bmc_last200_mean": np.nan,
+            "small_bmc_last200_sharpe": np.nan,
+            "small_bmc_last200_consistency": np.nan,
+            "small_bmc_last200_drawdown": np.nan,
+            "small_bmc_last200_avg_corr_bench": np.nan,
+        }
+    )
+    return row
+
+
 def _format_table(df: pd.DataFrame) -> str:
     return df.to_string(
         index=False,
@@ -239,6 +331,24 @@ def _apply_dark_theme(ax):
     ax.xaxis.label.set_color("white")
     ax.yaxis.label.set_color("white")
     ax.grid(True, alpha=0.3, color="white")
+
+
+def _filter_by_start_era(series: pd.Series, start_era: int | None) -> pd.Series:
+    if start_era is None:
+        return series
+
+    def _coerce_era(value) -> int | None:
+        digits = "".join(ch for ch in str(value) if ch.isdigit())
+        if not digits:
+            return None
+        return int(digits)
+
+    mask_list = []
+    for item in series.index:
+        era_value = _coerce_era(item)
+        mask_list.append(era_value is None or era_value >= start_era)
+    mask = np.array(mask_list, dtype=bool)
+    return series[mask]
 
 
 def _set_xticks(ax, index, max_ticks: int | None):
@@ -376,16 +486,24 @@ def main() -> None:
     output_dir = args.output_dir.resolve()
     baselines_dir = args.baselines_dir.resolve()
 
-    model_names = [args.base_model, *args.experiment_models]
     metrics_rows = []
-    base_results_path = _resolve_results_path(
-        output_dir, args.base_model, baselines_dir
-    )
-    if not base_results_path:
-        raise FileNotFoundError(
-            f"Results not found for {args.base_model} in {output_dir / 'results'} or {baselines_dir / 'results'}"
+
+    use_benchmark_base = args.base_benchmark_model is not None
+    if args.base_model == "benchmark" and args.base_benchmark_model is None:
+        args.base_benchmark_model = "v52_lgbm_ender20"
+        use_benchmark_base = True
+
+    base_results_path = None
+    if not use_benchmark_base:
+        base_results_path = _resolve_results_path(
+            output_dir, args.base_model, baselines_dir
         )
-    metrics_rows.append(_load_metrics(base_results_path))
+        if not base_results_path:
+            raise FileNotFoundError(
+                f"Results not found for {args.base_model} in {output_dir / 'results'} or {baselines_dir / 'results'}"
+            )
+        metrics_rows.append(_load_metrics(base_results_path))
+
     for name in args.experiment_models:
         results_path = _resolve_results_path(output_dir, name)
         if not results_path:
@@ -394,17 +512,86 @@ def main() -> None:
             )
         metrics_rows.append(_load_metrics(results_path))
 
+    reference_results_path = base_results_path
+    if reference_results_path is None:
+        if not args.experiment_models:
+            raise ValueError("Benchmark baseline requires at least one experiment model.")
+        reference_results_path = _resolve_results_path(
+            output_dir, args.experiment_models[0]
+        )
+        if not reference_results_path:
+            raise FileNotFoundError(
+                f"Results not found for {args.experiment_models[0]} in {output_dir / 'results'}"
+            )
+
+    reference_data = json.loads(reference_results_path.read_text())
+    data_version = (
+        args.benchmark_data_version
+        or reference_data.get("data", {}).get("data_version", "v5.2")
+    )
+    benchmark_model = args.base_benchmark_model or reference_data.get(
+        "benchmark", {}
+    ).get("model", "v52_lgbm_ender20")
+
+    if args.benchmark_data_path is not None:
+        benchmark, benchmark_col = numerai_metrics.load_benchmark_predictions_from_path(
+            args.benchmark_data_path,
+            benchmark_model,
+            era_col=args.era_col,
+            id_col=args.id_col,
+        )
+    else:
+        benchmark, benchmark_col = numerai_metrics.load_benchmark_predictions(
+            data_version,
+            benchmark_model=benchmark_model,
+            era_col=args.era_col,
+        )
+
+    if use_benchmark_base:
+        template_path = _resolve_predictions_path(
+            output_dir, args.experiment_models[0], baselines_dir
+        )
+        template_df = _load_predictions(
+            template_path, args.pred_col, args.target_col, args.era_col, args.id_col
+        )
+        attached = numerai_metrics.attach_benchmark_predictions(
+            template_df,
+            benchmark,
+            benchmark_col,
+            era_col=args.era_col,
+            id_col=args.id_col,
+        )
+        base_df = attached.copy()
+        base_df[args.pred_col] = base_df[benchmark_col].to_numpy()
+        base_name = benchmark_model
+        metrics_rows.insert(
+            0,
+            _metrics_from_predictions(
+                base_name,
+                base_df,
+                args.pred_col,
+                args.target_col,
+                args.era_col,
+                args.id_col,
+                benchmark,
+                benchmark_col,
+            ),
+        )
+    else:
+        base_path = _resolve_predictions_path(
+            output_dir, args.base_model, baselines_dir
+        )
+        base_df = _load_predictions(
+            base_path, args.pred_col, args.target_col, args.era_col, args.id_col
+        )
+        base_name = args.base_model
+
     metrics_df = pd.DataFrame(metrics_rows)
     print("Model metrics:")
     print(_format_table(metrics_df))
 
-    base_path = _resolve_predictions_path(
-        output_dir, args.base_model, baselines_dir
-    )
-    base_df = _load_predictions(
-        base_path, args.pred_col, args.target_col, args.era_col, args.id_col
-    )
     base_corr = _per_era_corr(base_df, args.pred_col, args.target_col, args.era_col)
+    base_corr = _filter_by_start_era(base_corr, args.start_era)
 
     model_corrs = {}
     for name in args.experiment_models:
@@ -413,6 +600,7 @@ def main() -> None:
             pred_path, args.pred_col, args.target_col, args.era_col, args.id_col
         )
         corr = _per_era_corr(df, args.pred_col, args.target_col, args.era_col)
+        corr = _filter_by_start_era(corr, args.start_era)
         model_corrs[name] = corr
 
     common_eras = base_corr.index
@@ -426,18 +614,6 @@ def main() -> None:
         name: corr.loc[common_eras].cumsum() for name, corr in model_corrs.items()
     }
 
-    results_data = json.loads(base_results_path.read_text())
-    data_version = results_data.get("data", {}).get("data_version", "v5.2")
-    benchmark_model = results_data.get("benchmark", {}).get(
-        "model", "v52_lgbm_ender20"
-    )
-    benchmark, benchmark_col = numerai_metrics.load_benchmark_predictions(
-        data_version,
-        split="full",
-        benchmark_model=benchmark_model,
-        era_col=args.era_col,
-    )
-
     bmc_cumsums = {}
     base_bmc = _per_era_bmc(
         base_df,
@@ -448,6 +624,7 @@ def main() -> None:
         benchmark,
         benchmark_col,
     )
+    base_bmc = _filter_by_start_era(base_bmc, args.start_era)
     model_bmcs = {}
     for name in args.experiment_models:
         pred_path = _resolve_predictions_path(output_dir, name)
@@ -463,6 +640,7 @@ def main() -> None:
             benchmark,
             benchmark_col,
         )
+        bmc = _filter_by_start_era(bmc, args.start_era)
         model_bmcs[name] = bmc
 
     common_bmc_eras = base_bmc.index
@@ -471,12 +649,12 @@ def main() -> None:
     if common_bmc_eras.empty:
         raise ValueError("No overlapping eras for BMC across base and experiment models.")
     base_bmc = base_bmc.loc[common_bmc_eras]
-    bmc_cumsums[args.base_model] = base_bmc.cumsum()
+    bmc_cumsums[base_name] = base_bmc.cumsum()
     for name, bmc in model_bmcs.items():
         bmc_cumsums[name] = bmc.loc[common_bmc_eras].cumsum()
 
     plot_path = _plot_curves(
-        args.base_model,
+        base_name,
         base_cumsum,
         model_cumsums,
         bmc_cumsums,

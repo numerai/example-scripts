@@ -49,4 +49,5 @@ CONFIG = {
 ## Validate
 - Run a smoke test: `.venv/bin/python -m agents.code.modeling --config <config_path>`.
 - Run metrics on the smoke test and make sure corr_mean is > 0.005 and < 0.04. If it's less then something is probably fundamentally wrong. If it's higher than there is likely leakage and you need to find the problem.
+- Double check that any early stopping mechanisms or modifications to the fit/predict loop don't over-estimate accuracy. Accurately estimating performance is of paramount importance on Numerai because we need to be able to decide if we should stake or not.
 - Run unit tests after refactors: `.venv/bin/python -m unittest`.
