@@ -137,7 +137,6 @@ def score_summary(scores: pd.Series) -> dict:
             "std": np.nan,
             "sharpe": np.nan,
             "max_drawdown": np.nan,
-            "consistency": np.nan,
         }
     mean = scores.mean()
     std = scores.std(ddof=0)
@@ -147,12 +146,11 @@ def score_summary(scores: pd.Series) -> dict:
         "std": std,
         "sharpe": sharpe,
         "max_drawdown": max_drawdown(scores),
-        "consistency": (scores > 0).mean(),
     }
 
 
 def summarize_scores(per_era_scores: pd.DataFrame) -> pd.DataFrame:
-    """Summarize per-era score DataFrame into mean/std/sharpe/drawdown/consistency."""
+    """Summarize per-era score DataFrame into mean/std/sharpe/drawdown."""
     per_era_scores = _sort_era_index(per_era_scores)
     summary = {col: score_summary(per_era_scores[col]) for col in per_era_scores}
     return pd.DataFrame(summary).T

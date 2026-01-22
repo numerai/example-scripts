@@ -224,22 +224,18 @@ def _load_metrics(results_path: Path) -> dict:
         "feature_set": data.get("data", {}).get("feature_set"),
         "bmc_mean": bmc.get("mean"),
         "bmc_sharpe": bmc.get("sharpe"),
-        "bmc_consistency": bmc.get("consistency"),
         "bmc_drawdown": bmc.get("max_drawdown"),
         "bmc_avg_corr_bench": bmc.get("avg_corr_with_benchmark"),
         "bmc_last200_mean": bmc_last.get("mean"),
         "bmc_last200_sharpe": bmc_last.get("sharpe"),
-        "bmc_last200_consistency": bmc_last.get("consistency"),
         "bmc_last200_drawdown": bmc_last.get("max_drawdown"),
         "bmc_last200_avg_corr_bench": bmc_last.get("avg_corr_with_benchmark"),
         "small_bmc_mean": small.get("mean"),
         "small_bmc_sharpe": small.get("sharpe"),
-        "small_bmc_consistency": small.get("consistency"),
         "small_bmc_drawdown": small.get("max_drawdown"),
         "small_bmc_avg_corr_bench": small.get("avg_corr_with_benchmark"),
         "small_bmc_last200_mean": small_last.get("mean"),
         "small_bmc_last200_sharpe": small_last.get("sharpe"),
-        "small_bmc_last200_consistency": small_last.get("consistency"),
         "small_bmc_last200_drawdown": small_last.get("max_drawdown"),
         "small_bmc_last200_avg_corr_bench": small_last.get(
             "avg_corr_with_benchmark"
@@ -253,7 +249,6 @@ def _summary_row(summary: pd.Series, prefix: str) -> dict:
     return {
         f"{prefix}_mean": summary.get("mean"),
         f"{prefix}_sharpe": summary.get("sharpe"),
-        f"{prefix}_consistency": summary.get("consistency"),
         f"{prefix}_drawdown": summary.get("max_drawdown"),
     }
 
@@ -301,12 +296,10 @@ def _metrics_from_predictions(
         {
             "small_bmc_mean": np.nan,
             "small_bmc_sharpe": np.nan,
-            "small_bmc_consistency": np.nan,
             "small_bmc_drawdown": np.nan,
             "small_bmc_avg_corr_bench": np.nan,
             "small_bmc_last200_mean": np.nan,
             "small_bmc_last200_sharpe": np.nan,
-            "small_bmc_last200_consistency": np.nan,
             "small_bmc_last200_drawdown": np.nan,
             "small_bmc_last200_avg_corr_bench": np.nan,
         }
