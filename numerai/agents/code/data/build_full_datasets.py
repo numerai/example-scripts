@@ -50,11 +50,12 @@ def build_full_dataset(
     full_path = Path(f"{data_version}/full.parquet")
     if reuse_existing and full_path.exists():
         return full_path
-    train_path = f"{data_version}/train.parquet"
-    validation_path = f"{data_version}/validation.parquet"
-
-    napi.download_dataset(train_path)
-    napi.download_dataset(validation_path)
+    train_path = Path(f"{data_version}/train.parquet")
+    validation_path = Path(f"{data_version}/validation.parquet")
+    if not train_path.exists():
+        napi.download_dataset(str(train_path))
+    if not validation_path.exists():
+        napi.download_dataset(str(validation_path))
 
     train = pd.read_parquet(train_path)
     validation = pd.read_parquet(validation_path)
@@ -74,13 +75,15 @@ def build_full_benchmark(
     full_path = Path(f"{data_version}/full_benchmark_models.parquet")
     if reuse_existing and full_path.exists():
         return full_path
-    train_path = f"{data_version}/train_benchmark_models.parquet"
-    validation_path = f"{data_version}/validation_benchmark_models.parquet"
-    validation_data_path = f"{data_version}/validation.parquet"
-
-    napi.download_dataset(train_path)
-    napi.download_dataset(validation_path)
-    napi.download_dataset(validation_data_path)
+    train_path = Path(f"{data_version}/train_benchmark_models.parquet")
+    validation_path = Path(f"{data_version}/validation_benchmark_models.parquet")
+    validation_data_path = Path(f"{data_version}/validation.parquet")
+    if not train_path.exists():
+        napi.download_dataset(str(train_path))
+    if not validation_path.exists():
+        napi.download_dataset(str(validation_path))
+    if not validation_data_path.exists():
+        napi.download_dataset(str(validation_data_path))
 
     validation_meta = pd.read_parquet(validation_data_path, columns=["data_type"])
     validation_meta = validation_meta[validation_meta["data_type"] == "validation"]

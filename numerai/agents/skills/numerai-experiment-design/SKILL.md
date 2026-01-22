@@ -81,3 +81,16 @@ Note that these are examples only. Each idea will call for different sweeps, or 
 - `agents/code/metrics/numerai_metrics.py` (BMC/corr summaries)
 - `python -m agents.code.analysis.show_experiment` (compare runs)
 - `python -m agents.code.data.build_full_datasets` (full + downsampled datasets)
+
+## Deployment (after experiments complete)
+Once you have finalized your best model and created a pkl file using the `numerai-model-upload` skill:
+
+1. **Offer deployment**: Ask the user if they want to deploy the pkl to Numerai for automated submissions.
+
+2. **Deployment options** (via the Numerai MCP server):
+   - **Create a new model**: Use `create_model` to create a new model slot, then upload the pkl
+   - **Upload to existing model**: List the user's existing models and upload to one they choose
+
+3. **Follow the `numerai-model-upload` skill** for the complete deployment workflow using the MCP server tools (`create_model`, `upload_model`, `graphql_query`).
+
+This allows the full research-to-deployment workflow to happen in a single session.
