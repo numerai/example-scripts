@@ -6,6 +6,15 @@ Need help? Find us on Discord:
 
 [![](https://dcbadge.vercel.app/api/server/numerai)](https://discord.gg/numerai)
 
+## Using Agents
+Numerai is quickly developing open-source agent skills for you to use in the tournament. You can start architecting your very own AI scientist. For example:
+
+```
+git clone github.com:numerai/example-scripts && cd example-scripts 
+export NUMERAI_ID=<api key id> NUMERAI_SECRET=<api key secret>
+codex exec --yolo "find the best neural network architecture to predict target ender"
+```
+
 
 ## Notebooks 
 
