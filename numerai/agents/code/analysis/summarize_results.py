@@ -51,7 +51,6 @@ def _load_results(path: Path) -> dict:
         "model_type": data.get("model", {}).get("type"),
         "bmc_mean": bmc.get("mean"),
         "bmc_sharpe": bmc.get("sharpe"),
-        "bmc_consistency": bmc.get("consistency"),
         "bmc_drawdown": bmc.get("max_drawdown"),
         "bmc_avg_corr_with_benchmark": bmc.get("avg_corr_with_benchmark"),
         "corr_mean": corr.get("mean"),
@@ -102,9 +101,9 @@ def main() -> None:
                     "model_type",
                     "bmc_mean",
                     "bmc_sharpe",
-                    "bmc_consistency",
                     "bmc_avg_corr_with_benchmark",
                     "corr_mean",
+                    "corr_sharpe",
                 ]
             ]
         )

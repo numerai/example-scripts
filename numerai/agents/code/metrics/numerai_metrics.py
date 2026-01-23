@@ -137,7 +137,6 @@ def score_summary(scores: pd.Series) -> dict:
             "std": np.nan,
             "sharpe": np.nan,
             "max_drawdown": np.nan,
-            "consistency": np.nan,
         }
     mean = scores.mean()
     std = scores.std(ddof=0)
@@ -147,12 +146,11 @@ def score_summary(scores: pd.Series) -> dict:
         "std": std,
         "sharpe": sharpe,
         "max_drawdown": max_drawdown(scores),
-        "consistency": (scores > 0).mean(),
     }
 
 
 def summarize_scores(per_era_scores: pd.DataFrame) -> pd.DataFrame:
-    """Summarize per-era score DataFrame into mean/std/sharpe/drawdown/consistency."""
+    """Summarize per-era score DataFrame into mean/std/sharpe/drawdown."""
     per_era_scores = _sort_era_index(per_era_scores)
     summary = {col: score_summary(per_era_scores[col]) for col in per_era_scores}
     return pd.DataFrame(summary).T
@@ -201,13 +199,15 @@ def ensure_full_benchmark_models(napi: NumerAPI, data_version: str) -> Path:
     if full_path.exists():
         return full_path
 
-    train_path = f"{data_version}/train_benchmark_models.parquet"
-    validation_path = f"{data_version}/validation_benchmark_models.parquet"
-    validation_data_path = f"{data_version}/validation.parquet"
-
-    napi.download_dataset(train_path)
-    napi.download_dataset(validation_path)
-    napi.download_dataset(validation_data_path)
+    train_path = Path(f"{data_version}/train_benchmark_models.parquet")
+    validation_path = Path(f"{data_version}/validation_benchmark_models.parquet")
+    validation_data_path = Path(f"{data_version}/validation.parquet")
+    if not train_path.exists():
+        napi.download_dataset(str(train_path))
+    if not validation_path.exists():
+        napi.download_dataset(str(validation_path))
+    if not validation_data_path.exists():
+        napi.download_dataset(str(validation_data_path))
 
     validation_meta = pd.read_parquet(validation_data_path, columns=["data_type"])
     validation_meta = validation_meta[validation_meta["data_type"] == "validation"]

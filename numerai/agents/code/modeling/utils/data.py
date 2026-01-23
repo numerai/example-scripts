@@ -22,10 +22,12 @@ def ensure_full_dataset(napi: NumerAPI, data_version: str) -> Path:
     if full_path.exists():
         return full_path
 
-    train_path = f"{data_version}/train.parquet"
-    validation_path = f"{data_version}/validation.parquet"
-    napi.download_dataset(train_path)
-    napi.download_dataset(validation_path)
+    train_path = Path(f"{data_version}/train.parquet")
+    validation_path = Path(f"{data_version}/validation.parquet")
+    if not train_path.exists():
+        napi.download_dataset(str(train_path))
+    if not validation_path.exists():
+        napi.download_dataset(str(validation_path))
 
     train = pd.read_parquet(train_path)
     validation = pd.read_parquet(validation_path)

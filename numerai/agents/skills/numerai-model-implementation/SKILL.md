@@ -51,3 +51,9 @@ CONFIG = {
 - Run metrics on the smoke test and make sure corr_mean is > 0.005 and < 0.04. If it's less then something is probably fundamentally wrong. If it's higher than there is likely leakage and you need to find the problem.
 - Double check that any early stopping mechanisms or modifications to the fit/predict loop don't over-estimate accuracy. Accurately estimating performance is of paramount importance on Numerai because we need to be able to decide if we should stake or not.
 - Run unit tests after refactors: `.venv/bin/python -m unittest`.
+
+## Next Steps
+After validating the model implementation:
+1. Use the `numerai-experiment-design` skill to run experiments and find the best configuration.
+2. Use the `numerai-model-upload` skill to create a pkl file for the final model.
+3. Deploy to Numerai using the MCP server (see `numerai-model-upload` skill for deployment workflow).
