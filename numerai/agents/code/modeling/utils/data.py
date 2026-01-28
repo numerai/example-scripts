@@ -8,26 +8,45 @@ import pandas as pd
 from numerapi import NumerAPI
 
 from agents.code.metrics import numerai_metrics
+from .constants import NUMERAI_DIR, REPO_DIR
 
 
 def load_features(napi: NumerAPI, data_version: str, feature_set: str) -> list[str]:
-    napi.download_dataset(f"{data_version}/features.json")
-    with open(f"{data_version}/features.json", "r", encoding="utf-8") as f:
+    features_path = (NUMERAI_DIR / data_version / "features.json").resolve()
+    features_path.parent.mkdir(parents=True, exist_ok=True)
+    if not features_path.exists():
+        napi.download_dataset(
+            f"{data_version}/features.json", dest_path=str(features_path)
+        )
+    with features_path.open("r", encoding="utf-8") as f:
         feature_metadata = json.load(f)
     return feature_metadata["feature_sets"][feature_set]
 
 
+def _resolve_data_path(path: str | Path) -> Path:
+    candidate = Path(path).expanduser()
+    if candidate.is_absolute():
+        return candidate.resolve()
+    if candidate.parts and candidate.parts[0] == NUMERAI_DIR.name:
+        return (REPO_DIR / candidate).resolve()
+    return (NUMERAI_DIR / candidate).resolve()
+
+
 def ensure_full_dataset(napi: NumerAPI, data_version: str) -> Path:
-    full_path = Path(f"{data_version}/full.parquet")
+    full_path = (NUMERAI_DIR / data_version / "full.parquet").resolve()
     if full_path.exists():
         return full_path
 
-    train_path = Path(f"{data_version}/train.parquet")
-    validation_path = Path(f"{data_version}/validation.parquet")
+    train_path = (NUMERAI_DIR / data_version / "train.parquet").resolve()
+    validation_path = (NUMERAI_DIR / data_version / "validation.parquet").resolve()
     if not train_path.exists():
-        napi.download_dataset(str(train_path))
+        train_path.parent.mkdir(parents=True, exist_ok=True)
+        napi.download_dataset(f"{data_version}/train.parquet", dest_path=str(train_path))
     if not validation_path.exists():
-        napi.download_dataset(str(validation_path))
+        validation_path.parent.mkdir(parents=True, exist_ok=True)
+        napi.download_dataset(
+            f"{data_version}/validation.parquet", dest_path=str(validation_path)
+        )
 
     train = pd.read_parquet(train_path)
     validation = pd.read_parquet(validation_path)
@@ -51,7 +70,7 @@ def load_full_data(
     extra_cols: list[str] | None = None,
 ) -> pd.DataFrame:
     if full_data_path:
-        full_path = Path(full_data_path).expanduser().resolve()
+        full_path = _resolve_data_path(full_data_path)
         if not full_path.exists():
             raise FileNotFoundError(f"Full data file not found: {full_path}")
     else:
@@ -85,7 +104,6 @@ def apply_missing_all_twos_as_nan(
     updated = pd.concat([non_features, features], axis=1)
     return updated[df.columns]
 
-
 def attach_benchmark_column(
     full: pd.DataFrame,
     data_version: str,
@@ -95,6 +113,7 @@ def attach_benchmark_column(
     id_col: str,
 ) -> tuple[pd.DataFrame, str]:
     if benchmark_data_path:
+        benchmark_data_path = _resolve_data_path(benchmark_data_path)
         benchmark, benchmark_col = numerai_metrics.load_benchmark_predictions_from_path(
             benchmark_data_path,
             benchmark_model,
@@ -122,7 +141,7 @@ def attach_benchmark_models(
     if id_col not in full.columns:
         raise ValueError(f"Full data missing id column '{id_col}'.")
     if benchmark_data_path:
-        benchmark_path = Path(benchmark_data_path).expanduser().resolve()
+        benchmark_path = _resolve_data_path(benchmark_data_path)
         if not benchmark_path.exists():
             raise FileNotFoundError(f"Benchmark data file not found: {benchmark_path}")
     else:

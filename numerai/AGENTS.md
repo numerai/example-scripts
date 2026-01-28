@@ -2,5 +2,6 @@
 This folder contains examples on how to participate in the Numerai Tournament.
 
 ## Directory Guide:
-- `agents`: the directory that all AI agents should
-- `*.ipynb`: basic tutorial notebooks for humans to learn how the tournament works
+- `agents/`: agentic research framework + training/analysis pipeline (`python -m agents.code.modeling`)
+- `v5.2/` (and other `v*/`): Numerai dataset files (often gitignored locally)
+- `*.ipynb`: tutorial notebooks for learning the tournament workflows

@@ -11,14 +11,12 @@ from .config import (
     load_config,
     resolve_predictions_path,
     resolve_results_path,
-    resolve_small_bmc_baseline_path,
 )
 from .constants import (
     BASE_DIR,
     DEFAULT_BASELINES_DIR,
     DEFAULT_BENCHMARK_MODEL,
     DEFAULT_OUTPUT_DIR,
-    DEFAULT_SMALL_BMC_BASELINE,
 )
 from .data import (
     apply_missing_all_twos_as_nan,
@@ -132,8 +130,6 @@ def summarize_predictions(
     data_version: str,
     benchmark_model: str,
     benchmark_data_path: str | None,
-    small_bmc_baseline_path: Path,
-    small_bmc_baseline_name: str,
     era_col: str,
     id_col: str,
 ) -> dict:
@@ -144,8 +140,6 @@ def summarize_predictions(
         data_version,
         benchmark_model=benchmark_model,
         benchmark_data_path=benchmark_data_path,
-        small_bmc_baseline_path=small_bmc_baseline_path,
-        small_bmc_baseline_name=small_bmc_baseline_name,
         era_col=era_col,
         id_col=id_col,
     )
@@ -168,8 +162,6 @@ def build_results_payload(
     embargo_eras: int,
     benchmark_model: str,
     benchmark_data_path: str | Path | None,
-    small_bmc_baseline: str,
-    small_bmc_baseline_path: Path,
     output_dir: Path,
     predictions_relative: Path,
     summaries: dict,
@@ -178,11 +170,6 @@ def build_results_payload(
     max_train_samples: int | None,
     sample_seed: int,
 ) -> dict:
-    try:
-        small_bmc_baseline_rel = str(small_bmc_baseline_path.relative_to(output_dir))
-    except ValueError:
-        small_bmc_baseline_rel = str(small_bmc_baseline_path)
-
     model_meta = {
         "type": model_type,
         "params": model_params,
@@ -222,16 +209,13 @@ def build_results_payload(
             "file": benchmark_data_path
             or f"{data_version}/full_benchmark_models.parquet",
         },
-        "small_bmc_benchmark": {
-            "model": small_bmc_baseline,
-            "predictions_file": str(small_bmc_baseline_rel),
-        },
         "output": {
             "output_dir": str(output_dir),
             "predictions_file": str(predictions_relative),
         },
         "metrics": {
             "corr": summaries["corr"].loc["prediction"].to_dict(),
+            "bmc": summaries["bmc"].loc["prediction"].to_dict(),
             "bmc_last_200_eras": summaries["bmc_last_200_eras"]
             .loc["prediction"]
             .to_dict(),
@@ -251,16 +235,6 @@ def build_results_payload(
             },
         },
     }
-    if "bmc" in summaries:
-        results["metrics"]["bmc"] = summaries["bmc"].loc["prediction"].to_dict()
-    if "small_bmc" in summaries:
-        results["metrics"]["small_bmc"] = (
-            summaries["small_bmc"].loc["prediction"].to_dict()
-        )
-    if "small_bmc_last200" in summaries:
-        results["metrics"]["small_bmc_last200"] = (
-            summaries["small_bmc_last200"].loc["prediction"].to_dict()
-        )
     return results
 
 
@@ -290,9 +264,6 @@ def run_training(
     benchmark_data_path = data_config.get("benchmark_data_path")
     embargo_eras = data_config.get("embargo_eras", 13)
     benchmark_model = data_config.get("benchmark_model", DEFAULT_BENCHMARK_MODEL)
-    small_bmc_baseline = data_config.get(
-        "small_bmc_baseline", DEFAULT_SMALL_BMC_BASELINE
-    )
 
     nan_missing_all_twos = preprocessing_config.get("nan_missing_all_twos", False)
     missing_value = preprocessing_config.get("missing_value", 2.0)
@@ -307,17 +278,6 @@ def run_training(
     )
 
     napi = NumerAPI()
-
-    small_bmc_baseline_override = (
-        data_config.get("small_bmc_baseline_path")
-        or config.get("output", {}).get("small_bmc_baseline_path")
-    )
-    small_bmc_baseline_path = resolve_small_bmc_baseline_path(
-        small_bmc_baseline,
-        predictions_dir,
-        baselines_dir,
-        override_path=small_bmc_baseline_override,
-    )
 
     full, features = load_and_prepare_data(
         napi,
@@ -417,8 +377,6 @@ def run_training(
         data_version,
         benchmark_model,
         benchmark_data_path,
-        small_bmc_baseline_path,
-        small_bmc_baseline,
         era_col,
         id_col,
     )
@@ -440,8 +398,6 @@ def run_training(
         embargo_eras=embargo_eras,
         benchmark_model=benchmark_model,
         benchmark_data_path=benchmark_data_path,
-        small_bmc_baseline=small_bmc_baseline,
-        small_bmc_baseline_path=small_bmc_baseline_path,
         output_dir=output_dir,
         predictions_relative=predictions_relative,
         summaries=summaries,

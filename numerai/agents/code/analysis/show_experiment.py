@@ -216,8 +216,6 @@ def _load_metrics(results_path: Path) -> dict:
     metrics = data.get("metrics", {})
     bmc = metrics.get("bmc", {})
     bmc_last = metrics.get("bmc_last_200_eras", {})
-    small = metrics.get("small_bmc", {})
-    small_last = metrics.get("small_bmc_last200", {})
     corr = metrics.get("corr", {})
     return {
         "model": results_path.stem,
@@ -230,16 +228,6 @@ def _load_metrics(results_path: Path) -> dict:
         "bmc_last200_sharpe": bmc_last.get("sharpe"),
         "bmc_last200_drawdown": bmc_last.get("max_drawdown"),
         "bmc_last200_avg_corr_bench": bmc_last.get("avg_corr_with_benchmark"),
-        "small_bmc_mean": small.get("mean"),
-        "small_bmc_sharpe": small.get("sharpe"),
-        "small_bmc_drawdown": small.get("max_drawdown"),
-        "small_bmc_avg_corr_bench": small.get("avg_corr_with_benchmark"),
-        "small_bmc_last200_mean": small_last.get("mean"),
-        "small_bmc_last200_sharpe": small_last.get("sharpe"),
-        "small_bmc_last200_drawdown": small_last.get("max_drawdown"),
-        "small_bmc_last200_avg_corr_bench": small_last.get(
-            "avg_corr_with_benchmark"
-        ),
         "corr_mean": corr.get("mean"),
         "corr_sharpe": corr.get("sharpe"),
     }
@@ -292,18 +280,6 @@ def _metrics_from_predictions(
     row.update(_summary_row(bmc_last, "bmc_last200"))
     row["bmc_last200_avg_corr_bench"] = benchmark_corr_last
     row.update(_summary_row(corr_summary, "corr"))
-    row.update(
-        {
-            "small_bmc_mean": np.nan,
-            "small_bmc_sharpe": np.nan,
-            "small_bmc_drawdown": np.nan,
-            "small_bmc_avg_corr_bench": np.nan,
-            "small_bmc_last200_mean": np.nan,
-            "small_bmc_last200_sharpe": np.nan,
-            "small_bmc_last200_drawdown": np.nan,
-            "small_bmc_last200_avg_corr_bench": np.nan,
-        }
-    )
     return row
 
 

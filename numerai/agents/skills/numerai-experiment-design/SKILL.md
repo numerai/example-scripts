@@ -6,18 +6,27 @@ description: Design and manage Numerai experiments in this repo for any model id
 # Numerai Experiment Design
 Use this workflow to plan, run, and report Numerai experiments for any model idea.
 
+Note: run commands from `numerai/` (so `agents` is importable), or from repo root with `PYTHONPATH=numerai`.
+
 ## Planning checklist (answer before running)
 - State the model idea and novelty.
 - Choose the initial baseline and feature set. Default to `deep_lgbm_ender20_baseline` (feature_set=all) unless the user explicitly requests the small baseline; keep experiments' feature_set aligned with the chosen baseline.
-- Decide the primary metric for the phase (`small_bmc_mean` for small baseline, `bmc_mean` for deep baseline).
+- Decide the primary metric (`bmc_mean` and `bmc_last_200_eras`) where BMC = Benchmark Model Contribution vs official `v52_lgbm_ender20`.
 - Decide which parameter dimensions to explore based on the core idea (targets, model hyperparameters, ensemble weights, data settings).
 - Or decide that no parameter sweeps are necessary because the idea is a small enough change that only one test is needed.
+
+## Handling ambiguity (fast disambiguation)
+If the user's request is unclear or underspecified:
+1) List 2–4 plausible interpretations (keep them meaningfully different).
+2) Implement **quick scout runs** for each interpretation (downsampled data, conservative compute).
+3) Compare `bmc_mean` and `bmc_last_200_eras`.
+4) Use the best-BMC interpretation going forward, and document the choice + rationale in `experiment.md`.
 
 ## Workflow 
 Core loop (repeat for each experiment round):
 1) If the model type is new, implement it with the numerai-model-implementation skill.
 2) Create/update experiment configs for the current sweep round.
-3) Run training via `python -m agents.code.modeling --config <config> --output-dir <experiment_dir>`, which calls `pipeline.py` for CV/OOF + results.
+3) Run training via `PYTHONPATH=numerai python3 -m agents.code.modeling --config <config> --output-dir <experiment_dir>`, which calls `pipeline.py` for CV/OOF + results.
 4) Update `experiment.md` with decisions + metrics, then proceed to the next step in this skill.
 
 ## Scout -> Scale
@@ -46,8 +55,7 @@ Note that these are examples only. Each idea will call for different sweeps, or 
 ## Baseline alignment
 - Declare which baseline the model is aiming to improve on.
 - Keep `feature_set` aligned with the baseline for comparisons.
-- Default to ender20 (v52_lgbm_ender20) as the benchmark reference and plot baseline, even when sweeping; only use the small baseline when explicitly requested.
-- If small baseline, focus on small_bmc for assessment. If deep baseline, focus on bmc for assessment.
+- Default to ender20 (`v52_lgbm_ender20`) as the benchmark reference and plot baseline, even when sweeping; only use the small baseline when explicitly requested.
 
 ## Experiment organization
 - Keep related runs under a single, well-named folder in `agents/experiments/`.
@@ -61,26 +69,25 @@ Note that these are examples only. Each idea will call for different sweeps, or 
 
 ## Reporting expectations
 - Write a loop to continuously wait for your experiments to finish, so that you don't break your session and report prematurely.
-- Once you complete your research and stop finding improvements, write a report for the user. It should describe learnings (what worked and what did not), include the final stats table, and run `python -m agents.code.analysis.show_experiment benchmark <best_model> --base-benchmark-model v52_lgbm_ender20 --benchmark-data-path v5.2/full_benchmark_models.parquet --start-era 575 --dark --output-dir <experiment_dir> --baselines-dir baselines` to generate the cumulative corr + BMC plot (share the output path).
+- Once you complete your research and stop finding improvements, write a report for the user. It should describe learnings (what worked and what did not), include the final stats table, and run `PYTHONPATH=numerai python3 -m agents.code.analysis.show_experiment benchmark <best_model> --base-benchmark-model v52_lgbm_ender20 --benchmark-data-path numerai/v5.2/full_benchmark_models.parquet --start-era 575 --dark --output-dir <experiment_dir> --baselines-dir numerai/agents/baselines` to generate the cumulative corr + BMC plot (share the output path).
 - Use `python -m agents.code.analysis.plot_benchmark_corrs` only when comparing official benchmark model columns, not for experiment BMC curves.
 - Always report:
   - `bmc` (full) and `bmc_last_200_eras`
-  - `small_bmc` (full) and `small_bmc_last200`
-  - `corr_mean` and `corr_w_baseline_avg` (use `avg_corr_with_benchmark` as the baseline-corr proxy)
+  - `corr_mean` and `avg_corr_with_benchmark` (corr vs the official benchmark predictions)
 - Use consistent, markdown tables and update `experiment.md` after each run.
 - Include a cohesive plan and story, finishing with a final result that combines learnings from all experiments. Think of yourself as a scientist writing a paper that walks the reader through your discoveries and thought process so that they understand why you finished with the result you did.
 
 ## Dataset handling
 - Build datasets with `python -m agents.code.data.build_full_datasets`.
-  - Full: `v5.2/full.parquet`, `v5.2/full_benchmark_models.parquet`
-  - Downsampled (every 4 eras): `v5.2/downsampled_full.parquet`, `v5.2/downsampled_full_benchmark_models.parquet`
+  - Full: `numerai/v5.2/full.parquet`, `numerai/v5.2/full_benchmark_models.parquet`
+  - Downsampled (every 4 eras): `numerai/v5.2/downsampled_full.parquet`, `numerai/v5.2/downsampled_full_benchmark_models.parquet`
 - Prefer downsampled for quick iteration; only scale after a clear signal for the final model.
 
 ## Useful entry points
-- `python -m agents.code.modeling` (training + metrics)
+- `PYTHONPATH=numerai python3 -m agents.code.modeling` (training + metrics)
 - `agents/code/metrics/numerai_metrics.py` (BMC/corr summaries)
-- `python -m agents.code.analysis.show_experiment` (compare runs)
-- `python -m agents.code.data.build_full_datasets` (full + downsampled datasets)
+- `PYTHONPATH=numerai python3 -m agents.code.analysis.show_experiment` (compare runs)
+- `PYTHONPATH=numerai python3 -m agents.code.data.build_full_datasets` (full + downsampled datasets)
 
 ## Deployment (after experiments complete)
 Once you have finalized your best model and created a pkl file using the `numerai-model-upload` skill:

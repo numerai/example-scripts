@@ -8,6 +8,8 @@ description: Add a new Numerai model type to the agents training pipeline. Use w
 ## Overview
 Add a new model type so it can be selected in configs and trained/evaluated by the base pipeline.
 
+Note: run commands from `numerai/` (so `agents` is importable), or from repo root with `PYTHONPATH=numerai`.
+
 ## Implement a New Model Type
 
 1. Define the model API and output shape.

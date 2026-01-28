@@ -8,6 +8,8 @@ from pathlib import Path
 import pandas as pd
 from numerapi import NumerAPI
 
+from agents.code.modeling.utils.constants import NUMERAI_DIR
+
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
@@ -47,15 +49,19 @@ def parse_args() -> argparse.Namespace:
 def build_full_dataset(
     napi: NumerAPI, data_version: str, reuse_existing: bool = True
 ) -> Path:
-    full_path = Path(f"{data_version}/full.parquet")
+    full_path = (NUMERAI_DIR / data_version / "full.parquet").resolve()
     if reuse_existing and full_path.exists():
         return full_path
-    train_path = Path(f"{data_version}/train.parquet")
-    validation_path = Path(f"{data_version}/validation.parquet")
+    train_path = (NUMERAI_DIR / data_version / "train.parquet").resolve()
+    validation_path = (NUMERAI_DIR / data_version / "validation.parquet").resolve()
     if not train_path.exists():
-        napi.download_dataset(str(train_path))
+        train_path.parent.mkdir(parents=True, exist_ok=True)
+        napi.download_dataset(f"{data_version}/train.parquet", dest_path=str(train_path))
     if not validation_path.exists():
-        napi.download_dataset(str(validation_path))
+        validation_path.parent.mkdir(parents=True, exist_ok=True)
+        napi.download_dataset(
+            f"{data_version}/validation.parquet", dest_path=str(validation_path)
+        )
 
     train = pd.read_parquet(train_path)
     validation = pd.read_parquet(validation_path)
@@ -72,18 +78,31 @@ def build_full_dataset(
 def build_full_benchmark(
     napi: NumerAPI, data_version: str, reuse_existing: bool = True
 ) -> Path:
-    full_path = Path(f"{data_version}/full_benchmark_models.parquet")
+    full_path = (NUMERAI_DIR / data_version / "full_benchmark_models.parquet").resolve()
     if reuse_existing and full_path.exists():
         return full_path
-    train_path = Path(f"{data_version}/train_benchmark_models.parquet")
-    validation_path = Path(f"{data_version}/validation_benchmark_models.parquet")
-    validation_data_path = Path(f"{data_version}/validation.parquet")
+    train_path = (NUMERAI_DIR / data_version / "train_benchmark_models.parquet").resolve()
+    validation_path = (
+        NUMERAI_DIR / data_version / "validation_benchmark_models.parquet"
+    ).resolve()
+    validation_data_path = (NUMERAI_DIR / data_version / "validation.parquet").resolve()
     if not train_path.exists():
-        napi.download_dataset(str(train_path))
+        train_path.parent.mkdir(parents=True, exist_ok=True)
+        napi.download_dataset(
+            f"{data_version}/train_benchmark_models.parquet",
+            dest_path=str(train_path),
+        )
     if not validation_path.exists():
-        napi.download_dataset(str(validation_path))
+        validation_path.parent.mkdir(parents=True, exist_ok=True)
+        napi.download_dataset(
+            f"{data_version}/validation_benchmark_models.parquet",
+            dest_path=str(validation_path),
+        )
     if not validation_data_path.exists():
-        napi.download_dataset(str(validation_data_path))
+        validation_data_path.parent.mkdir(parents=True, exist_ok=True)
+        napi.download_dataset(
+            f"{data_version}/validation.parquet", dest_path=str(validation_data_path)
+        )
 
     validation_meta = pd.read_parquet(validation_data_path, columns=["data_type"])
     validation_meta = validation_meta[validation_meta["data_type"] == "validation"]
@@ -112,7 +131,7 @@ def build_downsampled_full_dataset(
         raise ValueError("downsample-eras-step must be >= 2.")
     if era_offset < 0 or era_offset >= era_step:
         raise ValueError("downsample-eras-offset must be in [0, downsample-eras-step).")
-    downsampled_path = Path(f"{data_version}/downsampled_full.parquet")
+    downsampled_path = (NUMERAI_DIR / data_version / "downsampled_full.parquet").resolve()
     full = pd.read_parquet(full_path)
     era_col = "era"
     if era_col not in full.columns:
@@ -131,7 +150,9 @@ def build_downsampled_full_benchmark(
     downsampled_full_path: Path,
     data_version: str,
 ) -> Path:
-    downsampled_path = Path(f"{data_version}/downsampled_full_benchmark_models.parquet")
+    downsampled_path = (
+        NUMERAI_DIR / data_version / "downsampled_full_benchmark_models.parquet"
+    ).resolve()
     ids = pd.read_parquet(downsampled_full_path, columns=["id"])
     if "id" not in ids.columns:
         raise ValueError(f"{downsampled_full_path} missing 'id' column.")

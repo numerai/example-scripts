@@ -1,11 +1,15 @@
 # Numerai Agent
 
 Goal: play the Numerai Tournament by running experiments and implementing new
-research ideas to find models with strong BMC. The end goal
+research ideas to find models with strong BMC (Benchmark Model Contribution). The end goal
 is a stable of relatively unique, high-performing models for submission.
 
 Always check the agents/skills/ folder for skills that match the user request.
-We run commands from the `agents/` directory, but data is expected to live under `numerai/data_version`.
+Run commands from `numerai/` (so `agents` is importable), or from repo root with `PYTHONPATH=numerai`.
+Data is expected to live under `numerai/<data_version>/` (e.g. `numerai/v5.2/`), which is often gitignored locally.
+
+To make these repo skills available to Codex CLI, symlink them into `~/.codex/skills/`:
+`ln -s $PWD/numerai/agents/skills/* ~/.codex/skills/`
 
 ## Python Environment Setup
 

@@ -11,6 +11,17 @@ import pyarrow.parquet as pq
 from numerapi import NumerAPI
 from numerai_tools.scoring import correlation_contribution, numerai_corr
 
+from agents.code.modeling.utils.constants import NUMERAI_DIR, REPO_DIR
+
+
+def _resolve_data_path(path: str | Path) -> Path:
+    candidate = Path(path).expanduser()
+    if candidate.is_absolute():
+        return candidate.resolve()
+    if candidate.parts and candidate.parts[0] == NUMERAI_DIR.name:
+        return (REPO_DIR / candidate).resolve()
+    return (NUMERAI_DIR / candidate).resolve()
+
 
 def _as_list(cols: Iterable) -> List:
     if isinstance(cols, (list, tuple, pd.Index, np.ndarray)):
@@ -195,19 +206,32 @@ def load_custom_benchmark_predictions(
 
 
 def ensure_full_benchmark_models(napi: NumerAPI, data_version: str) -> Path:
-    full_path = Path(f"{data_version}/full_benchmark_models.parquet")
+    full_path = (NUMERAI_DIR / data_version / "full_benchmark_models.parquet").resolve()
     if full_path.exists():
         return full_path
 
-    train_path = Path(f"{data_version}/train_benchmark_models.parquet")
-    validation_path = Path(f"{data_version}/validation_benchmark_models.parquet")
-    validation_data_path = Path(f"{data_version}/validation.parquet")
+    train_path = (NUMERAI_DIR / data_version / "train_benchmark_models.parquet").resolve()
+    validation_path = (
+        NUMERAI_DIR / data_version / "validation_benchmark_models.parquet"
+    ).resolve()
+    validation_data_path = (NUMERAI_DIR / data_version / "validation.parquet").resolve()
     if not train_path.exists():
-        napi.download_dataset(str(train_path))
+        train_path.parent.mkdir(parents=True, exist_ok=True)
+        napi.download_dataset(
+            f"{data_version}/train_benchmark_models.parquet",
+            dest_path=str(train_path),
+        )
     if not validation_path.exists():
-        napi.download_dataset(str(validation_path))
+        validation_path.parent.mkdir(parents=True, exist_ok=True)
+        napi.download_dataset(
+            f"{data_version}/validation_benchmark_models.parquet",
+            dest_path=str(validation_path),
+        )
     if not validation_data_path.exists():
-        napi.download_dataset(str(validation_data_path))
+        validation_data_path.parent.mkdir(parents=True, exist_ok=True)
+        napi.download_dataset(
+            f"{data_version}/validation.parquet", dest_path=str(validation_data_path)
+        )
 
     validation_meta = pd.read_parquet(validation_data_path, columns=["data_type"])
     validation_meta = validation_meta[validation_meta["data_type"] == "validation"]
@@ -237,8 +261,12 @@ def load_benchmark_predictions(
     if split == "full":
         dataset = str(ensure_full_benchmark_models(napi, data_version))
     else:
-        dataset = f"{data_version}/{split}_benchmark_models.parquet"
-        napi.download_dataset(dataset)
+        remote_name = f"{data_version}/{split}_benchmark_models.parquet"
+        local_path = (NUMERAI_DIR / data_version / f"{split}_benchmark_models.parquet").resolve()
+        local_path.parent.mkdir(parents=True, exist_ok=True)
+        if not local_path.exists():
+            napi.download_dataset(remote_name, dest_path=str(local_path))
+        dataset = str(local_path)
     columns = _parquet_columns(dataset)
     benchmark_col = _resolve_benchmark_column(columns, benchmark_model)
     benchmark = pd.read_parquet(dataset, columns=[era_col, benchmark_col])
@@ -254,7 +282,7 @@ def load_benchmark_predictions_from_path(
     id_col: str = "id",
 ) -> tuple[pd.DataFrame, str]:
     """Load benchmark predictions from a local parquet path."""
-    path = Path(benchmark_path).expanduser().resolve()
+    path = _resolve_data_path(benchmark_path)
     columns = _parquet_columns(path)
     benchmark_col = _resolve_benchmark_column(columns, benchmark_model)
     read_cols = [benchmark_col]
@@ -342,8 +370,6 @@ def summarize_prediction_file_with_bmc(
     benchmark_data_path: str | Path | None = None,
     era_col: str = "era",
     id_col: str = "id",
-    small_bmc_baseline_path: str | Path | None = None,
-    small_bmc_baseline_name: str = "small_lgbm_ender20_baseline",
 ) -> dict[str, pd.DataFrame]:
     """Load predictions, attach benchmark model, and summarize corr and BMC metrics."""
     summaries = summarize_prediction_file(
@@ -355,7 +381,7 @@ def summarize_prediction_file_with_bmc(
         required_cols.append(id_col)
     predictions = pd.read_parquet(predictions_path, columns=required_cols)
     if benchmark_data_path is not None:
-        benchmark_path = Path(benchmark_data_path).expanduser().resolve()
+        benchmark_path = _resolve_data_path(benchmark_data_path)
         if not benchmark_path.exists():
             raise FileNotFoundError(f"Benchmark data file not found: {benchmark_path}")
         columns = _parquet_columns(benchmark_path)
@@ -403,49 +429,4 @@ def summarize_prediction_file_with_bmc(
             benchmark_corr_recent_mean.get(col, np.nan)
         )
     summaries["bmc_last_200_eras"] = bmc_recent_summary
-
-    if small_bmc_baseline_path is not None:
-        baseline_path = Path(small_bmc_baseline_path)
-        if baseline_path.exists():
-            baseline, baseline_col = load_custom_benchmark_predictions(
-                baseline_path,
-                small_bmc_baseline_name,
-                pred_col="prediction",
-                era_col=era_col,
-                id_col=id_col,
-            )
-            baseline_predictions = attach_benchmark_predictions(
-                predictions,
-                baseline,
-                baseline_col,
-                era_col=era_col,
-                id_col=id_col,
-            )
-            per_era_small = per_era_bmc(
-                baseline_predictions,
-                pred_cols,
-                baseline_col,
-                target_col,
-                era_col,
-            )
-            small_corr = per_era_pred_corr(
-                baseline_predictions, pred_cols, baseline_col, era_col=era_col
-            )
-            small_corr_mean = small_corr.mean()
-            small_bmc_summary = summarize_scores(per_era_small)
-            for col in small_bmc_summary.index:
-                small_bmc_summary.loc[col, "avg_corr_with_benchmark"] = float(
-                    small_corr_mean.get(col, np.nan)
-                )
-            summaries["small_bmc"] = small_bmc_summary
-
-            per_era_small_recent = _last_n_eras(per_era_small, 200)
-            small_bmc_recent_summary = summarize_scores(per_era_small_recent)
-            small_corr_recent = _last_n_eras(small_corr, 200)
-            small_corr_recent_mean = small_corr_recent.mean()
-            for col in small_bmc_recent_summary.index:
-                small_bmc_recent_summary.loc[col, "avg_corr_with_benchmark"] = float(
-                    small_corr_recent_mean.get(col, np.nan)
-                )
-            summaries["small_bmc_last200"] = small_bmc_recent_summary
     return summaries

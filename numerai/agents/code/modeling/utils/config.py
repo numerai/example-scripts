@@ -33,21 +33,3 @@ def resolve_predictions_path(
     if not predictions_name:
         predictions_name = output_config.get("results_name") or config_path.stem
     return predictions_dir / f"{predictions_name}.parquet"
-
-
-def resolve_small_bmc_baseline_path(
-    baseline_name: str,
-    predictions_dir: Path,
-    baselines_dir: Path,
-    override_path: str | None = None,
-) -> Path:
-    if override_path:
-        return Path(override_path).expanduser().resolve()
-    candidate_paths = [
-        baselines_dir / "predictions" / f"{baseline_name}.parquet",
-        predictions_dir / f"{baseline_name}.parquet",
-    ]
-    for candidate in candidate_paths:
-        if candidate.exists():
-            return candidate
-    return candidate_paths[0]

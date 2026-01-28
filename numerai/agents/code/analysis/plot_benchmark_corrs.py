@@ -19,6 +19,7 @@ except ImportError as exc:  # pragma: no cover
     ) from exc
 
 from agents.code.metrics import numerai_metrics
+from agents.code.modeling.utils.constants import NUMERAI_DIR
 
 AGENTS_DIR = Path(__file__).resolve().parents[2]
 
@@ -227,16 +228,26 @@ def _load_version_frame(
             raise FileNotFoundError(f"Benchmark parquet not found: {path}")
         paths = [path]
     else:
-        full_path = Path(f"{data_version}/full_benchmark_models.parquet")
+        full_path = (NUMERAI_DIR / data_version / "full_benchmark_models.parquet").resolve()
         if full_path.exists():
             paths = [full_path]
         else:
-            train_path = Path(f"{data_version}/train_benchmark_models.parquet")
-            val_path = Path(f"{data_version}/validation_benchmark_models.parquet")
+            train_path = (NUMERAI_DIR / data_version / "train_benchmark_models.parquet").resolve()
+            val_path = (
+                NUMERAI_DIR / data_version / "validation_benchmark_models.parquet"
+            ).resolve()
             if not train_path.exists():
-                napi.download_dataset(str(train_path))
+                train_path.parent.mkdir(parents=True, exist_ok=True)
+                napi.download_dataset(
+                    f"{data_version}/train_benchmark_models.parquet",
+                    dest_path=str(train_path),
+                )
             if not val_path.exists():
-                napi.download_dataset(str(val_path))
+                val_path.parent.mkdir(parents=True, exist_ok=True)
+                napi.download_dataset(
+                    f"{data_version}/validation_benchmark_models.parquet",
+                    dest_path=str(val_path),
+                )
             paths = [train_path, val_path]
 
     columns = _available_columns(paths[0])
@@ -281,7 +292,7 @@ def _load_targets_frame(
             raise FileNotFoundError(f"Target parquet not found: {path}")
         paths = [path]
     else:
-        full_path = Path(f"{data_version}/full.parquet")
+        full_path = (NUMERAI_DIR / data_version / "full.parquet").resolve()
         if full_path.exists():
             paths = [full_path]
         elif fallback_path is not None and fallback_path.exists():
@@ -290,12 +301,18 @@ def _load_targets_frame(
             )
             paths = [fallback_path]
         else:
-            train_path = Path(f"{data_version}/train.parquet")
-            val_path = Path(f"{data_version}/validation.parquet")
+            train_path = (NUMERAI_DIR / data_version / "train.parquet").resolve()
+            val_path = (NUMERAI_DIR / data_version / "validation.parquet").resolve()
             if not train_path.exists():
-                napi.download_dataset(str(train_path))
+                train_path.parent.mkdir(parents=True, exist_ok=True)
+                napi.download_dataset(
+                    f"{data_version}/train.parquet", dest_path=str(train_path)
+                )
             if not val_path.exists():
-                napi.download_dataset(str(val_path))
+                val_path.parent.mkdir(parents=True, exist_ok=True)
+                napi.download_dataset(
+                    f"{data_version}/validation.parquet", dest_path=str(val_path)
+                )
             paths = [train_path, val_path]
 
     columns = _available_columns(paths[0])

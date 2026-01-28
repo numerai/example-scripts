@@ -245,10 +245,10 @@ Build datasets with `python -m agents.code.data.build_full_datasets`:
 
 | File | Description |
 |------|-------------|
-| `v5.2/full.parquet` | Full training data |
-| `v5.2/full_benchmark_models.parquet` | Benchmark model predictions |
-| `v5.2/downsampled_full.parquet` | Every 4th era (fast iteration) |
-| `v5.2/downsampled_full_benchmark_models.parquet` | Downsampled benchmarks |
+| `numerai/v5.2/full.parquet` | Full training data |
+| `numerai/v5.2/full_benchmark_models.parquet` | Benchmark model predictions |
+| `numerai/v5.2/downsampled_full.parquet` | Every 4th era (fast iteration) |
+| `numerai/v5.2/downsampled_full_benchmark_models.parquet` | Downsampled benchmarks |
 
 ### Strategy
 
@@ -284,8 +284,10 @@ Build datasets with `python -m agents.code.data.build_full_datasets`:
 
 ## Important Notes
 
-- **Commands run from `agents/` directory**, but data lives under `numerai/data_version`
+- **Run commands from `numerai/`** (so `agents` is importable), or from repo root with `PYTHONPATH=numerai`
+- **Data lives under `numerai/<data_version>/`** (e.g. `numerai/v5.2/`), which is often gitignored locally
+- **Register repo skills**: `ln -s $PWD/numerai/agents/skills/* ~/.codex/skills/`
 - **Network access required** for MCP operations (Codex CLI may need `--yolo` flag)
 - **Always query Python version** before creating pkl files
-- **BMC (Benchmark Model Correlation)** is the key metric for experiment comparison
+- **BMC (Benchmark Model Contribution)** is the key experiment metric (proxy for MMC), computed vs official `v52_lgbm_ender20` benchmark predictions in `*_benchmark_models.parquet`
 - **Only Classic tournament (8)** supports pickle uploads
