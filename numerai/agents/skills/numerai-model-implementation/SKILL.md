@@ -56,6 +56,6 @@ CONFIG = {
 
 ## Next Steps
 After validating the model implementation:
-1. Use the `numerai-experiment-design` skill to run experiments and find the best configuration.
-2. Use the `numerai-model-upload` skill to create a pkl file for the final model.
+1. Use the `numerai-experiment-design` skill to run **multiple rounds** of experiments (4–5 configs per round), then **scale winners** until you hit a plateau.
+2. Use the `numerai-model-upload` skill to create a pkl file **only after** you have a stable, scaled “best model” you intend to deploy.
 3. Deploy to Numerai using the MCP server (see `numerai-model-upload` skill for deployment workflow).

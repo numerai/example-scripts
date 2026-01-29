@@ -20,6 +20,8 @@ This skill is a “meta-workflow” that sequences existing Numerai skills so re
   - write configs in `configs/`
   - run training via `PYTHONPATH=numerai python3 -m agents.code.modeling --config <config> --output-dir <experiment_dir>`
   - track metrics with BMC as primary (`bmc_mean`, `bmc_last_200_eras`)
+  - **iterate in rounds** (typically 4–5 configs per round), and keep going until you hit a plateau (per the experiment-design skill)
+  - **scale winners** (bigger feature set and/or full data) before finalizing the best model
 
 ### 2) Implement new model types if needed (use numerai-model-implementation)
 
@@ -29,7 +31,7 @@ Only if the idea requires new code (new model wrapper, new fit/predict behavior,
 
 ### 3) Report the research (use report-research)
 
-After experiments finish:
+After you have iterated through multiple rounds **and** stopped finding improvements (plateau), and after any confirmatory scale runs:
 - Follow the `report-research` skill to:
   - write a full `experiment.md` (abstract + methods + results + decisions + next steps)
   - generate the standard `show_experiment` plot(s)
@@ -44,5 +46,6 @@ If (and only if) the user wants deployment:
 ## Defaults (unless user specifies otherwise)
 
 - Scout first on downsampled data; scale only winners.
+- Run experiments in rounds (4–5 configs per round) and stop only after a plateau + confirmatory scale step.
 - Benchmark reference: `v52_lgbm_ender20`.
 - Always record corr + BMC metrics and include the standard plot in the report.

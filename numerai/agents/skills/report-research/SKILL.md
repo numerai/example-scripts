@@ -24,6 +24,7 @@ Use the folder that contains:
 - List configs that exist.
 - Determine which ones were executed by checking for matching `results/*.json` and `predictions/*.parquet`.
 - Identify the “best” model(s) using `bmc_mean` and `bmc_last_200_eras.mean` (primary), with `corr_mean` as a sanity check.
+- If experiments were run in rounds, summarize **each round’s intent** (what changed) and whether it improved the current best.
 
 ### 3) Extract metrics for the report
 
@@ -46,6 +47,7 @@ Update/create `experiment.md` with these sections (keep it crisp but complete):
 - **Results** (the metrics table; mention best run + trade-offs)
 - **Standard plot** (embed the PNG and include the generating command)
 - **Decisions made** (what you chose and why; e.g., per-era vs global, feature set choice, sweep choices)
+- **Stopping rationale** (why you stopped iterating; e.g., plateau after N rounds, confirmatory scale step, diminishing returns)
 - **Findings** (what worked / didn’t; interpret the plot)
 - **Next experiments** (2–5 concrete follow-ups)
 - **Repro commands** (train + plot commands from repo root)

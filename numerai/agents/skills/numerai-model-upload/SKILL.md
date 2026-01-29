@@ -65,7 +65,7 @@ pip install numpy pandas cloudpickle scipy
 ## Workflow
 1. **Query the default Docker image** from the MCP to determine the required Python version.
 2. **Create/activate a matching venv** using pyenv (see above).
-3. Train on the desired full dataset (train + validation) with the same preprocessing and early-stopping scheme as the best model.
+3. Train on the desired full dataset (train + validation) with the same preprocessing and early-stopping scheme as the best model **only after** your research has plateaued and you have selected the final configuration to deploy.
 4. Export an inference bundle from the trained model:
    - Feature list and ordering
    - Imputation values and scaling stats

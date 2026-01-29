@@ -8,12 +8,16 @@ Use this workflow to plan, run, and report Numerai experiments for any model ide
 
 Note: run commands from `numerai/` (so `agents` is importable), or from repo root with `PYTHONPATH=numerai`.
 
+## Persistence expectation (required)
+
+This skill is *not* complete after a single promising run. You must run experiments in **rounds** (typically **4–5 configs per round**), synthesize results, and decide what to try next. Only finalize when you reach a plateau and additional rounds stop improving the primary metric.
+
 ## Planning checklist (answer before running)
 - State the model idea and novelty.
 - Choose the initial baseline and feature set. Default to `deep_lgbm_ender20_baseline` (feature_set=all) unless the user explicitly requests the small baseline; keep experiments' feature_set aligned with the chosen baseline.
 - Decide the primary metric (`bmc_mean` and `bmc_last_200_eras`) where BMC = Benchmark Model Contribution vs official `v52_lgbm_ender20`.
 - Decide which parameter dimensions to explore based on the core idea (targets, model hyperparameters, ensemble weights, data settings).
-- Or decide that no parameter sweeps are necessary because the idea is a small enough change that only one test is needed.
+- Or decide that only a minimal round is needed because the change is tiny — but still run multiple variants unless the user explicitly requested exactly one run.
 
 ## Handling ambiguity (fast disambiguation)
 If the user's request is unclear or underspecified:
@@ -25,9 +29,14 @@ If the user's request is unclear or underspecified:
 ## Workflow 
 Core loop (repeat for each experiment round):
 1) If the model type is new, implement it with the numerai-model-implementation skill.
-2) Create/update experiment configs for the current sweep round.
-3) Run training via `PYTHONPATH=numerai python3 -m agents.code.modeling --config <config> --output-dir <experiment_dir>`, which calls `pipeline.py` for CV/OOF + results.
-4) Update `experiment.md` with decisions + metrics, then proceed to the next step in this skill.
+2) Create/update **4–5 configs** for the current round (one base + single-variable variants).
+3) Run training for each config via `PYTHONPATH=numerai python3 -m agents.code.modeling --config <config> --output-dir <experiment_dir>`, which calls `pipeline.py` for CV/OOF + results.
+4) Wait for the whole round to finish, then **synthesize** results:
+   - pick the current best by `bmc_last_200_eras.mean` (primary), with `bmc_mean` as a tie-breaker
+   - sanity-check `corr_mean` and `avg_corr_with_benchmark` (avoid “high corr, low BMC” traps)
+   - check stability (drawdown/sharpe) and whether the improvement is consistent across eras
+5) Update `experiment.md` with: what changed this round, the metrics table, and the next-round decision.
+6) Repeat rounds until a plateau is reached (see “When to stop” below), then scale the winner.
 
 ## Scout -> Scale
 1) **Use downsampled**: Use `v5.2/downsampled_full.parquet` + `v5.2/downsampled_full_benchmark_models.parquet` to save memory and time when experimenting.
@@ -36,6 +45,12 @@ Core loop (repeat for each experiment round):
 4) **Focus when a parameter dominates**: If one parameter clearly drives results, dedicate a full round to mapping its range (including extremes) while holding others fixed.
 5) **Scale only winners**: Once a best option is determined in the small baseline phase, move to phase 2 where you use the deep baseline and all feature_set, and scale the more expensive parameters like n_estimators and network size, if applicable.  
 6) **Full data final**: Run the top config on full data and record the final metrics and final bmc when you stop finding improvements.
+
+## When to stop (plateau criteria)
+
+Stop iterating only when **at least two consecutive rounds** fail to beat the current best `bmc_last_200_eras.mean` by a meaningful margin (rule of thumb: ~`1e-4`–`3e-4`), *and* the remaining untried knobs are either redundant with what you already swept or likely to increase overfit/benchmark-correlation.
+
+If you plateau on downsampled data, do *one* confirmatory scale step (bigger feature set and/or more data) before concluding the idea is maxed out.
 
 ## Sweep selection by research type
 Note that these are examples only. Each idea will call for different sweeps, or no sweeps. These are some guidelines but use your judgement to determine the best experiments to run to answer the core question of "does/can this core idea produce a model that has high bmc_mean?
@@ -68,7 +83,7 @@ Note that these are examples only. Each idea will call for different sweeps, or 
 - Name configs to reflect the single variable change.
 
 ## Reporting expectations
-- Write a loop to continuously wait for your experiments to finish, so that you don't break your session and report prematurely.
+- Run experiments in **rounds** and continuously wait for the round to finish so you don't report prematurely.
 - Once you complete your research and stop finding improvements, write a report for the user. It should describe learnings (what worked and what did not), include the final stats table, and run `PYTHONPATH=numerai python3 -m agents.code.analysis.show_experiment benchmark <best_model> --base-benchmark-model v52_lgbm_ender20 --benchmark-data-path numerai/v5.2/full_benchmark_models.parquet --start-era 575 --dark --output-dir <experiment_dir> --baselines-dir numerai/agents/baselines` to generate the cumulative corr + BMC plot (share the output path).
 - Use `python -m agents.code.analysis.plot_benchmark_corrs` only when comparing official benchmark model columns, not for experiment BMC curves.
 - Always report:
