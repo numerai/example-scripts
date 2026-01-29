@@ -1,6 +1,6 @@
 ---
 name: numerai-research
-description: End-to-end Numerai research workflow for trying a new idea: design experiments, implement new model types if needed, run scout→scale experiments, write a full experiment.md report with standard plots, and optionally package/upload a Numerai pickle. Use when a user asks to “try/test a new idea”, “run an experiment”, “sweep configs”, “compare model variants”, or otherwise do new Numerai research.
+description: "End-to-end Numerai research workflow for trying a new idea: design experiments, implement new model types if needed, run scout→scale experiments, write a full experiment.md report with standard plots, and optionally package/upload a Numerai pickle. Use when a user asks to “try/test a new idea”, “run an experiment”, “sweep configs”, “compare model variants”, or otherwise do new Numerai research."
 ---
 
 # Numerai Research
