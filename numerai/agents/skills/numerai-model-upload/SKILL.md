@@ -25,6 +25,10 @@ Look for the entry with `default: true`. The image name indicates the Python ver
 - `numerai_predict_py_3_11:a78dedd` → Python 3.11
 - `numerai_predict_py_3_10:a78dedd` → Python 3.10
 
+If the `numerai` MCP is not installed, it can be installed through our install script via  `curl -sL https://numer.ai/install-mcp.sh | bash`, this script guides the user through installing the MCP for Codex CLI and configuring an API key with the correct scopes that are required by MCP.
+
+You can find more documentation about Numerai MCP here: https://docs.numer.ai/numerai-tournament/mcp
+
 ### Step 2: Create Matching Virtual Environment with pyenv
 
 Use `pyenv` to create a virtual environment with the exact Python version:

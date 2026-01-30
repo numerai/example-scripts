@@ -121,6 +121,14 @@ The `numerai/agents/skills/` folder contains structured workflows for common tas
 
 The `numerai` MCP server provides programmatic access to the Numerai Tournament API. If available, agents should use it for tournament operations.
 
+It can be installed via curl through:
+
+```bash
+curl -sL https://numer.ai/install-mcp.sh | bash
+```
+
+This install script sets Codex CLI up with the MCP configuration as well as configures an environment variable for an MCP API key.
+
 ### Available Tools
 
 | Tool | Purpose |
@@ -153,11 +161,15 @@ The `numerai` MCP server provides programmatic access to the Numerai Tournament 
 ### Authentication
 
 MCP tools require a Numerai API token with appropriate scopes:
-- Format: `PUBLIC_ID$SECRET_KEY`
-- Get from: https://numer.ai/account
-- Required scope for uploads: `upload_submission`
+- Format: `Authorization: Token PUBLIC_ID$SECRET_KEY`
+- If MCP was installed via the above curl command, this would have already likely been configured through the `NUMERAI_MCP_AUTH` environment variable.
+- If MCP was not installed via the above curl command, you will need to create an MCP API key by navigating to https://numer.ai/account and clicking "Create MCP Key" and following the instructions in the modal, which are taking the PUBLIC_ID and SECRET_KEY and setting them in an environment variable through:
 
-If the environment variable `NUMERAI_MCP_AUTH` is set, authentication is pre-configured.
+```bash
+export NUMERAI_MCP_AUTH="Token PUBLIC_ID\$SECRET_KEY"
+```
+
+Since the PUBLIC_ID and SECRET_KEY are separated by a $ character, it likely needs to be escaped when set through the export command.
 
 ### Common Queries
 
