@@ -79,7 +79,7 @@ celerybeat-schedule
 .env
 
 # virtualenv
-venv/
+venv*/
 ENV/
 
 # Spyder project settings
@@ -93,6 +93,7 @@ ENV/
 *.parquet
 *.json
 *.model
+*.png
 
 .idea
 example_model.xgb
@@ -100,3 +101,6 @@ example_model.xgb
 .DS_Store
 
 v5.0/
+v5.1/
+v5.2/
+.venv/
