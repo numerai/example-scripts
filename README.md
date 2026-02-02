@@ -10,8 +10,8 @@ Need help? Find us on Discord:
 Numerai is quickly developing open-source agent skills for you to use in the tournament. You can start architecting your very own AI scientist. For example:
 
 ```
-git clone github.com:numerai/example-scripts && cd example-scripts 
-export NUMERAI_ID=<api key id> NUMERAI_SECRET=<api key secret>
+git clone git@github.com:numerai/example-scripts
+cd example-scripts && curl -sL http://numer.ai/install-mcp.sh | bash
 codex exec --yolo "find the best neural network architecture to predict target ender"
 ```
 
