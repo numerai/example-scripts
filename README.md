@@ -1,9 +1,7 @@
 # Numerai Example Scripts
+The official place to start playing the Numerai tournaments.
 
-A collection of scripts and notebooks to help you get started quickly. 
-
-Need help? Find us on Discord:
-https://discord.gg/numerai
+Need help? [Find us on Discord.](https://discord.gg/numerai)
 
 ## Using Agents
 Numerai is quickly developing open-source agent skills for you to use in the tournament. You can start architecting your very own AI scientist. For example:
