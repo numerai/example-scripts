@@ -27,7 +27,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install jupyter
-          pip install -r https://raw.githubusercontent.com/numerai/numerai-predict/refs/heads/master/requirements.txt
+          pip install -r https://raw.githubusercontent.com/numerai/numerai-predict/refs/heads/master/py3.12/requirements.txt
       - name: build-example-model
         run: |
           jupyter nbconvert \
