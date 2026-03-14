@@ -8,6 +8,8 @@ on:
     #   - hello_numerai.ipynb
     #   - feature_neutralization.ipynb
     #   - target_ensemble.ipynb
+    #   - signals/example_model.ipynb
+    #   - crypto/example_model.ipynb
     branches:
       - master
 
@@ -31,40 +33,56 @@ jobs:
       - name: build-example-model
         run: |
           jupyter nbconvert \
-            --execute example_model.ipynb \
+            --execute numerai/example_model.ipynb \
             --ExecutePreprocessor.timeout=-1 \
             --to html
       - name: build-hello-numerai
         run: |
           jupyter nbconvert \
-            --execute hello_numerai.ipynb \
+            --execute numerai/hello_numerai.ipynb \
             --ExecutePreprocessor.timeout=-1 \
             --to html
       - name: build-feature-neutralization
         run: |
           jupyter nbconvert \
-            --execute feature_neutralization.ipynb \
+            --execute numerai/feature_neutralization.ipynb \
             --ExecutePreprocessor.timeout=-1 \
             --to html
       - name: build-target-ensemble
         run: |
           jupyter nbconvert \
-            --execute target_ensemble.ipynb \
+            --execute numerai/target_ensemble.ipynb \
+            --ExecutePreprocessor.timeout=-1 \
+            --to html
+      - name: build-signals-example-model
+        run: |
+          jupyter nbconvert \
+            --execute signals/example_model.ipynb \
+            --ExecutePreprocessor.timeout=-1 \
+            --to html
+      - name: build-crypto-example-model
+        run: |
+          jupyter nbconvert \
+            --execute crypto/example_model.ipynb \
             --ExecutePreprocessor.timeout=-1 \
             --to html
       - name: delete-html
         run: |
-          rm example_model.html
-          rm hello_numerai.html
-          rm feature_neutralization.html
-          rm target_ensemble.html
+          rm numerai/example_model.html
+          rm numerai/hello_numerai.html
+          rm numerai/feature_neutralization.html
+          rm numerai/target_ensemble.html
+          rm signals/example_model.html
+          rm crypto/example_model.html
       - name: move-pickles-to-cached-pickles-dir
         run: |
           mkdir -p cached-pickles/
-          mv -f example_model.pkl cached-pickles/
-          mv -f hello_numerai.pkl cached-pickles/
-          mv -f feature_neutralization.pkl cached-pickles/
-          mv -f target_ensemble.pkl cached-pickles/
+          mv -f numerai/example_model.pkl cached-pickles/
+          mv -f numerai/hello_numerai.pkl cached-pickles/
+          mv -f numerai/feature_neutralization.pkl cached-pickles/
+          mv -f numerai/target_ensemble.pkl cached-pickles/
+          mv -f signals/example_model.pkl cached-pickles/signals_example_model.pkl
+          mv -f crypto/example_model.pkl cached-pickles/crypto_example_model.pkl
       - name: commit-to-master
         uses: EndBug/add-and-commit@v9
         with:
