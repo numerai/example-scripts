@@ -66,23 +66,25 @@ jobs:
             --execute crypto/example_model.ipynb \
             --ExecutePreprocessor.timeout=-1 \
             --to html
-      - name: delete-html
+      - name: delete-generated-files
         run: |
-          rm numerai/example_model.html
-          rm numerai/hello_numerai.html
-          rm numerai/feature_neutralization.html
-          rm numerai/target_ensemble.html
-          rm signals/example_model.html
-          rm crypto/example_model.html
-      - name: move-pickles-to-cached-pickles-dir
+          rm -f numerai/example_model.html
+          rm -f numerai/hello_numerai.html
+          rm -f numerai/feature_neutralization.html
+          rm -f numerai/target_ensemble.html
+          rm -f signals/example_model.html
+          rm -f signals/signals_example_preds.csv
+          rm -f signals_example_preds.csv
+          rm -f crypto/example_model.html
+          rm -f crypto/crypto_example_preds.csv
+          rm -f crypto_example_preds.csv
+      - name: move-numerai-pickles-to-cached-pickles-dir
         run: |
           mkdir -p cached-pickles/
           mv -f numerai/example_model.pkl cached-pickles/
           mv -f numerai/hello_numerai.pkl cached-pickles/
           mv -f numerai/feature_neutralization.pkl cached-pickles/
           mv -f numerai/target_ensemble.pkl cached-pickles/
-          mv -f signals/example_model.pkl cached-pickles/signals_example_model.pkl
-          mv -f crypto/example_model.pkl cached-pickles/crypto_example_model.pkl
       - name: commit-to-master
         uses: EndBug/add-and-commit@v9
         with:
