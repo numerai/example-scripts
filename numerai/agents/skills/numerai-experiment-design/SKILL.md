@@ -15,7 +15,7 @@ This skill is *not* complete after a single promising run. You must run experime
 ## Planning checklist (answer before running)
 - State the model idea and novelty.
 - Choose the initial baseline and feature set. Default to `deep_lgbm_ender20_baseline` (feature_set=all) unless the user explicitly requests the small baseline; keep experiments' feature_set aligned with the chosen baseline.
-- Decide the primary metric (`bmc_mean` and `bmc_last_200_eras`) where BMC = Benchmark Model Contribution vs official `v52_lgbm_ender20`.
+- Decide the primary metric (`bmc_mean` and `bmc_last_200_eras`) where BMC = Benchmark Model Contribution vs official `v53_lgbm_ender20`.
 - Decide which parameter dimensions to explore based on the core idea (targets, model hyperparameters, ensemble weights, data settings).
 - Or decide that only a minimal round is needed because the change is tiny — but still run multiple variants unless the user explicitly requested exactly one run.
 
@@ -39,7 +39,7 @@ Core loop (repeat for each experiment round):
 6) Repeat rounds until a plateau is reached (see “When to stop” below), then scale the winner.
 
 ## Scout -> Scale
-1) **Use downsampled**: Use `v5.2/downsampled_full.parquet` + `v5.2/downsampled_full_benchmark_models.parquet` to save memory and time when experimenting.
+1) **Use downsampled**: Use `v5.3/downsampled_full.parquet` + `v5.3/downsampled_full_benchmark_models.parquet` to save memory and time when experimenting.
 2) **Pick the sweep dimension that matches the core idea**: Run a focused sweep only when it serves the research question; otherwise run a single experiment config and evaluate.
 3) **Iterate until improvements stop**: Keep sweeping on that dimension while a round produces a new best metric. If a round does not improve, reassess or pivot.
 4) **Focus when a parameter dominates**: If one parameter clearly drives results, dedicate a full round to mapping its range (including extremes) while holding others fixed.
@@ -70,7 +70,7 @@ Note that these are examples only. Each idea will call for different sweeps, or 
 ## Baseline alignment
 - Declare which baseline the model is aiming to improve on.
 - Keep `feature_set` aligned with the baseline for comparisons.
-- Default to ender20 (`v52_lgbm_ender20`) as the benchmark reference and plot baseline, even when sweeping; only use the small baseline when explicitly requested.
+- Default to ender20 (`v53_lgbm_ender20`) as the benchmark reference and plot baseline, even when sweeping; only use the small baseline when explicitly requested.
 
 ## Experiment organization
 - Keep related runs under a single, well-named folder in `agents/experiments/`.
@@ -84,7 +84,7 @@ Note that these are examples only. Each idea will call for different sweeps, or 
 
 ## Reporting expectations
 - Run experiments in **rounds** and continuously wait for the round to finish so you don't report prematurely.
-- Once you complete your research and stop finding improvements, write a report for the user. It should describe learnings (what worked and what did not), include the final stats table, and run `PYTHONPATH=numerai python3 -m agents.code.analysis.show_experiment benchmark <best_model> --base-benchmark-model v52_lgbm_ender20 --benchmark-data-path numerai/v5.2/full_benchmark_models.parquet --start-era 575 --dark --output-dir <experiment_dir> --baselines-dir numerai/agents/baselines` to generate the cumulative corr + BMC plot (share the output path).
+- Once you complete your research and stop finding improvements, write a report for the user. It should describe learnings (what worked and what did not), include the final stats table, and run `PYTHONPATH=numerai python3 -m agents.code.analysis.show_experiment benchmark <best_model> --base-benchmark-model v53_lgbm_ender20 --benchmark-data-path numerai/v5.3/full_benchmark_models.parquet --start-era 575 --dark --output-dir <experiment_dir> --baselines-dir numerai/agents/baselines` to generate the cumulative corr + BMC plot (share the output path).
 - Use `python -m agents.code.analysis.plot_benchmark_corrs` only when comparing official benchmark model columns, not for experiment BMC curves.
 - Always report:
   - `bmc` (full) and `bmc_last_200_eras`
@@ -94,8 +94,8 @@ Note that these are examples only. Each idea will call for different sweeps, or 
 
 ## Dataset handling
 - Build datasets with `python -m agents.code.data.build_full_datasets`.
-  - Full: `numerai/v5.2/full.parquet`, `numerai/v5.2/full_benchmark_models.parquet`
-  - Downsampled (every 4 eras): `numerai/v5.2/downsampled_full.parquet`, `numerai/v5.2/downsampled_full_benchmark_models.parquet`
+  - Full: `numerai/v5.3/full.parquet`, `numerai/v5.3/full_benchmark_models.parquet`
+  - Downsampled (every 4 eras): `numerai/v5.3/downsampled_full.parquet`, `numerai/v5.3/downsampled_full_benchmark_models.parquet`
 - Prefer downsampled for quick iteration; only scale after a clear signal for the final model.
 
 ## Useful entry points

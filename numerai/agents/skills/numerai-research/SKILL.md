@@ -47,5 +47,5 @@ If (and only if) the user wants deployment:
 
 - Scout first on downsampled data; scale only winners.
 - Run experiments in rounds (4–5 configs per round) and stop only after a plateau + confirmatory scale step.
-- Benchmark reference: `v52_lgbm_ender20`.
+- Benchmark reference: `v53_lgbm_ender20`.
 - Always record corr + BMC metrics and include the standard plot in the report.

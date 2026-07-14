@@ -6,7 +6,7 @@ is a stable of relatively unique, high-performing models for submission.
 
 Always check the agents/skills/ folder for skills that match the user request.
 Run commands from `numerai/` (so `agents` is importable), or from repo root with `PYTHONPATH=numerai`.
-Data is expected to live under `numerai/<data_version>/` (e.g. `numerai/v5.2/`), which is often gitignored locally.
+Data is expected to live under `numerai/<data_version>/` (e.g. `numerai/v5.3/`), which is often gitignored locally.
 
 To make these repo skills available to Codex CLI, symlink them into `~/.codex/skills/`:
 `ln -s $PWD/numerai/agents/skills/* ~/.codex/skills/`

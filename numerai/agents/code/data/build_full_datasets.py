@@ -18,8 +18,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--data-version",
         type=str,
-        default="v5.2",
-        help="Numerai data version (default: v5.2).",
+        default="v5.3",
+        help="Numerai data version (default: v5.3).",
     )
     parser.add_argument(
         "--downsample-eras-step",

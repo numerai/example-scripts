@@ -1,4 +1,4 @@
-CONFIG = {'data': {'data_version': 'v5.2',
+CONFIG = {'data': {'data_version': 'v5.3',
           'embargo_eras': 13,
           'era_col': 'era',
           'feature_set': 'all',

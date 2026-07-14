@@ -85,7 +85,7 @@ def parse_args() -> argparse.Namespace:
         default=None,
         help=(
             "Use benchmark model predictions as the baseline instead of a results file. "
-            "Example: v52_lgbm_ender20. If set, base_model can be any label (e.g. 'benchmark')."
+            "Example: v53_lgbm_ender20. If set, base_model can be any label (e.g. 'benchmark')."
         ),
     )
     parser.add_argument(
@@ -459,7 +459,7 @@ def main() -> None:
 
     use_benchmark_base = args.base_benchmark_model is not None
     if args.base_model == "benchmark" and args.base_benchmark_model is None:
-        args.base_benchmark_model = "v52_lgbm_ender20"
+        args.base_benchmark_model = "v53_lgbm_ender20"
         use_benchmark_base = True
 
     base_results_path = None
@@ -496,11 +496,11 @@ def main() -> None:
     reference_data = json.loads(reference_results_path.read_text())
     data_version = (
         args.benchmark_data_version
-        or reference_data.get("data", {}).get("data_version", "v5.2")
+        or reference_data.get("data", {}).get("data_version", "v5.3")
     )
     benchmark_model = args.base_benchmark_model or reference_data.get(
         "benchmark", {}
-    ).get("model", "v52_lgbm_ender20")
+    ).get("model", "v53_lgbm_ender20")
 
     if args.benchmark_data_path is not None:
         benchmark, benchmark_col = numerai_metrics.load_benchmark_predictions_from_path(
