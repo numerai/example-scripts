@@ -28,7 +28,7 @@ DEFAULT_DATA_VERSION_V53 = "v5.3"
 DEFAULT_DATA_VERSION_V52 = "v5.2"
 DEFAULT_DATA_VERSION_V51 = "v5.1"
 DEFAULT_DATA_VERSION_V5 = "v5.0"
-DEFAULT_MODELS = ["v53_teager20", "v52_teager20", "v51_teager20"]
+DEFAULT_MODELS = ["v52_teager20", "v51_teager20", "v5_teager20"]
 
 ALIASES: dict[str, Sequence[str]] = {
     "v52_teager20": ("v52_lgbm_teager2b20", "v52_lgbm_teager20"),
@@ -223,11 +223,11 @@ def _resolve_target_column(name: str, columns: Iterable[str]) -> str:
 
 def _infer_version(name: str, default_version: str, args: argparse.Namespace) -> str:
     lowered = name.lower()
-    if lowered in {"ender20", "cyrus", "cyrusd20", "v53_ender20"}:
+    if lowered in {"ender20"}:
         return args.v53_version
     if lowered.startswith("v53_"):
         return args.v53_version
-    if lowered in {"v52_ender20", "v52_cyrus"}:
+    if lowered in {"cyrus", "cyrusd20",}:
         return args.v52_version
     if lowered.startswith("v52_"):
         return args.v52_version
