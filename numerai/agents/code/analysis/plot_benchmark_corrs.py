@@ -31,17 +31,15 @@ DEFAULT_DATA_VERSION_V5 = "v5.0"
 DEFAULT_MODELS = ["v53_teager20", "v52_teager20", "v51_teager20"]
 
 ALIASES: dict[str, Sequence[str]] = {
-    "v53_teager20": ("v53_lgbm_teager2b20", "v53_lgbm_teager20"),
     "v52_teager20": ("v52_lgbm_teager2b20", "v52_lgbm_teager20"),
     "v51_teager20": ("v51_lgbm_teager2b20", "v51_lgbm_teager20", "v51_teager20"),
     "v5_teager20": ("v5_lgbm_teager2b20", "v5_lgbm_teager20", "v5_teager20"),
     "v53_ender20": ("v53_lgbm_ender20",),
-    "ender20": ("v53_lgbm_ender20",),
     "v52_ender20": ("v52_lgbm_ender20",),
-    "v53_cyrus": ("v53_lgbm_cyrusd20",),
-    "cyrus": ("v53_lgbm_cyrusd20",),
+    "ender20": ("v53_lgbm_ender20",),
     "v52_cyrus": ("v52_lgbm_cyrusd20",),
-    "cyrusd20": ("v53_lgbm_cyrusd20",),
+    "cyrus": ("v52_lgbm_cyrusd20",),
+    "cyrusd20": ("v52_lgbm_cyrusd20",),
 }
 
 TARGET_ALIASES: dict[str, Sequence[str]] = {
@@ -50,7 +48,6 @@ TARGET_ALIASES: dict[str, Sequence[str]] = {
     "v52_ender20": ("target_ender_20",),
     "cyrus": ("target_cyrusd_20", "target_cyrus_20", "target_cyrus20"),
     "cyrusd20": ("target_cyrusd_20",),
-    "v53_cyrus": ("target_cyrusd_20",),
     "v52_cyrus": ("target_cyrusd_20",),
 }
 
@@ -226,7 +223,7 @@ def _resolve_target_column(name: str, columns: Iterable[str]) -> str:
 
 def _infer_version(name: str, default_version: str, args: argparse.Namespace) -> str:
     lowered = name.lower()
-    if lowered in {"ender20", "cyrus", "cyrusd20", "v53_ender20", "v53_cyrus"}:
+    if lowered in {"ender20", "cyrus", "cyrusd20", "v53_ender20"}:
         return args.v53_version
     if lowered.startswith("v53_"):
         return args.v53_version
