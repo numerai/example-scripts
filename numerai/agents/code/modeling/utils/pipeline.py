@@ -255,7 +255,7 @@ def run_training(
     training_config = config.get("training", {})
     model_config = config.get("model", {})
 
-    data_version = data_config.get("data_version", "v5.2")
+    data_version = data_config.get("data_version", "v5.3")
     feature_set = data_config.get("feature_set", "small")
     target_col = data_config.get("target_col", "target")
     era_col = data_config.get("era_col", "era")

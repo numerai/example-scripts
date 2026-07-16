@@ -24,6 +24,7 @@ from agents.code.modeling.utils.constants import NUMERAI_DIR
 AGENTS_DIR = Path(__file__).resolve().parents[2]
 
 
+DEFAULT_DATA_VERSION_V53 = "v5.3"
 DEFAULT_DATA_VERSION_V52 = "v5.2"
 DEFAULT_DATA_VERSION_V51 = "v5.1"
 DEFAULT_DATA_VERSION_V5 = "v5.0"
@@ -33,8 +34,9 @@ ALIASES: dict[str, Sequence[str]] = {
     "v52_teager20": ("v52_lgbm_teager2b20", "v52_lgbm_teager20"),
     "v51_teager20": ("v51_lgbm_teager2b20", "v51_lgbm_teager20", "v51_teager20"),
     "v5_teager20": ("v5_lgbm_teager2b20", "v5_lgbm_teager20", "v5_teager20"),
+    "v53_ender20": ("v53_lgbm_ender20",),
     "v52_ender20": ("v52_lgbm_ender20",),
-    "ender20": ("v52_lgbm_ender20",),
+    "ender20": ("v53_lgbm_ender20",),
     "v52_cyrus": ("v52_lgbm_cyrusd20",),
     "cyrus": ("v52_lgbm_cyrusd20",),
     "cyrusd20": ("v52_lgbm_cyrusd20",),
@@ -42,6 +44,7 @@ ALIASES: dict[str, Sequence[str]] = {
 
 TARGET_ALIASES: dict[str, Sequence[str]] = {
     "ender20": ("target_ender_20", "target_ender20"),
+    "v53_ender20": ("target_ender_20",),
     "v52_ender20": ("target_ender_20",),
     "cyrus": ("target_cyrusd_20", "target_cyrus_20", "target_cyrus20"),
     "cyrusd20": ("target_cyrusd_20",),
@@ -59,6 +62,12 @@ def parse_args() -> argparse.Namespace:
         "--data-path",
         type=Path,
         default=None,
+        help="Optional v5.3 benchmark parquet path override.",
+    )
+    parser.add_argument(
+        "--v52-path",
+        type=Path,
+        default=None,
         help="Optional v5.2 benchmark parquet path override.",
     )
     parser.add_argument(
@@ -72,6 +81,12 @@ def parse_args() -> argparse.Namespace:
         type=Path,
         default=None,
         help="Optional v5 benchmark parquet path override.",
+    )
+    parser.add_argument(
+        "--v53-version",
+        type=str,
+        default=DEFAULT_DATA_VERSION_V53,
+        help="Data version for v53 benchmark models.",
     )
     parser.add_argument(
         "--v52-version",
@@ -93,6 +108,12 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--target-path",
+        type=Path,
+        default=None,
+        help="Optional v5.3 target parquet path override.",
+    )
+    parser.add_argument(
+        "--v52-target-path",
         type=Path,
         default=None,
         help="Optional v5.2 target parquet path override.",
@@ -202,7 +223,11 @@ def _resolve_target_column(name: str, columns: Iterable[str]) -> str:
 
 def _infer_version(name: str, default_version: str, args: argparse.Namespace) -> str:
     lowered = name.lower()
-    if lowered in {"ender20", "cyrus", "cyrusd20", "v52_ender20", "v52_cyrus"}:
+    if lowered in {"ender20"}:
+        return args.v53_version
+    if lowered.startswith("v53_"):
+        return args.v53_version
+    if lowered in {"cyrus", "cyrusd20",}:
         return args.v52_version
     if lowered.startswith("v52_"):
         return args.v52_version
@@ -360,8 +385,10 @@ def _sort_era_index(scores: pd.DataFrame) -> pd.DataFrame:
 
 
 def _path_override(version: str, args: argparse.Namespace) -> Path | None:
-    if version == args.v52_version:
+    if version == args.v53_version:
         return args.data_path
+    if version == args.v52_version:
+        return args.v52_path
     if version == args.v51_version:
         return args.v51_path
     if version == args.v5_version:
@@ -370,8 +397,10 @@ def _path_override(version: str, args: argparse.Namespace) -> Path | None:
 
 
 def _target_path_override(version: str, args: argparse.Namespace) -> Path | None:
-    if version == args.v52_version:
+    if version == args.v53_version:
         return args.target_path
+    if version == args.v52_version:
+        return args.v52_target_path
     if version == args.v51_version:
         return args.v51_target_path
     if version == args.v5_version:
@@ -387,7 +416,7 @@ def main() -> None:
     napi = NumerAPI()
     version_models: dict[str, list[str]] = {}
     for name in args.models:
-        version = _infer_version(name, args.v52_version, args)
+        version = _infer_version(name, args.v53_version, args)
         version_models.setdefault(version, []).append(name)
 
     if args.list_columns:
@@ -419,7 +448,7 @@ def main() -> None:
     if args.target_path is not None:
         fallback_targets = args.target_path.expanduser().resolve()
     else:
-        default_fallback = Path(f"{args.v52_version}/full.parquet")
+        default_fallback = Path(f"{args.v53_version}/full.parquet")
         if default_fallback.exists():
             fallback_targets = default_fallback
 
@@ -486,11 +515,9 @@ def main() -> None:
     cumsum_ender = _sort_era_index(cumsum_ender)
     cumsum_cyrus = _sort_era_index(cumsum_cyrus)
 
-    base_label = next(
-        (name for name in args.models if name.lower().startswith("v5_")), None
-    )
+    base_label = args.models[-1] if args.models else None
     if base_label is None:
-        raise ValueError("Diff plot requires a v5.* model in --models.")
+        raise ValueError("Diff plot requires at least one model in --models.")
     base_col = resolved_by_label[base_label]
     base_ender = per_era_ender.get(base_col)
     base_cyrus = per_era_cyrus.get(base_col)

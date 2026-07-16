@@ -1,13 +1,13 @@
 CONFIG = {
     "data": {
-        "data_version": "v5.2",
+        "data_version": "v5.3",
         "embargo_eras": 13,
         "era_col": "era",
         "feature_set": "all",
         "target_col": "target",
         "id_col": "id",
-        "full_data_path": "v5.2/downsampled_full.parquet",
-        "benchmark_data_path": "v5.2/downsampled_full_benchmark_models.parquet",
+        "full_data_path": "v5.3/downsampled_full.parquet",
+        "benchmark_data_path": "v5.3/downsampled_full_benchmark_models.parquet",
     },
     "model": {
         "x_groups": ["features", "era", "benchmark_models"],

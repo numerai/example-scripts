@@ -253,7 +253,7 @@ def ensure_full_benchmark_models(napi: NumerAPI, data_version: str) -> Path:
 def load_benchmark_predictions(
     data_version: str,
     split: str = "full",
-    benchmark_model: str = "v52_lgbm_ender20",
+    benchmark_model: str = "v53_lgbm_ender20",
     era_col: str = "era",
 ) -> tuple[pd.DataFrame, str]:
     """Download and load benchmark predictions for the given data split."""
@@ -366,7 +366,7 @@ def summarize_prediction_file_with_bmc(
     pred_cols: Sequence,
     target_col: str,
     data_version: str,
-    benchmark_model: str = "v52_lgbm_ender20",
+    benchmark_model: str = "v53_lgbm_ender20",
     benchmark_data_path: str | Path | None = None,
     era_col: str = "era",
     id_col: str = "id",
