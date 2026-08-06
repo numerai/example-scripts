@@ -15,7 +15,7 @@ This skill is a “meta-workflow” that sequences existing Numerai skills so re
 
 - Follow the `numerai-experiment-design` skill to:
   - clarify the idea (or run quick scout interpretations if ambiguous)
-  - choose baseline + feature set alignment (default ender20 baseline)
+  - choose baseline + feature set alignment (default Ender-60 baseline)
   - create an experiment folder under `numerai/agents/experiments/<experiment_name>/`
   - write configs in `configs/`
   - run training via `PYTHONPATH=numerai python3 -m agents.code.modeling --config <config> --output-dir <experiment_dir>`
@@ -47,5 +47,5 @@ If (and only if) the user wants deployment:
 
 - Scout first on downsampled data; scale only winners.
 - Run experiments in rounds (4–5 configs per round) and stop only after a plateau + confirmatory scale step.
-- Benchmark reference: `v53_lgbm_ender20`.
+- Benchmark reference: `v53_lgbm_ender60`.
 - Always record corr + BMC metrics and include the standard plot in the report.

@@ -8,6 +8,8 @@ Always check the agents/skills/ folder for skills that match the user request.
 Run commands from `numerai/` (so `agents` is importable), or from repo root with `PYTHONPATH=numerai`.
 Data is expected to live under `numerai/<data_version>/` (e.g. `numerai/v5.3/`), which is often gitignored locally.
 
+The default v5.3 workflow uses explicit `target_ender_60`, `v53_lgbm_ender60`, and a 16-era embargo. Generic `target` is a mutable dataset alias and must not be used where target identity matters. Keep Ender-20-named configs pinned to `target_ender_20`.
+
 To make these repo skills available to Codex CLI, symlink them into `~/.codex/skills/`:
 `ln -s $PWD/numerai/agents/skills/* ~/.codex/skills/`
 

@@ -2,18 +2,17 @@ name: Build Example Model Pickles
 
 on:
   workflow_dispatch:
+  pull_request:
+    paths:
+      - ".github/workflows/build-models.yml"
+      - "numerai/**"
   push:
-    # paths:
-    #   - example_model.ipynb
-    #   - hello_numerai.ipynb
-    #   - feature_neutralization.ipynb
-    #   - target_ensemble.ipynb
-    #   - signals/example_model.ipynb
-    #   - crypto/example_model.ipynb
     branches:
       - master
 
-concurrency: build-example-models
+concurrency:
+  group: build-example-models-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
 
@@ -21,7 +20,7 @@ jobs:
     name: "Build Example Model Pickles"
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
@@ -30,6 +29,8 @@ jobs:
           python -m pip install --upgrade pip
           pip install jupyter
           pip install -r https://raw.githubusercontent.com/numerai/numerai-predict/refs/heads/master/py3.12/requirements.txt
+      - name: test-agent-helpers
+        run: PYTHONPATH=numerai python -m unittest numerai.agents.tests.test_target_transforms -v
       - name: build-example-model
         run: |
           jupyter nbconvert \
@@ -55,37 +56,55 @@ jobs:
             --ExecutePreprocessor.timeout=-1 \
             --to html
       - name: build-signals-example-model
+        if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
         run: |
           jupyter nbconvert \
             --execute signals/example_model.ipynb \
             --ExecutePreprocessor.timeout=-1 \
             --to html
       - name: build-crypto-example-model
+        if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
         run: |
           jupyter nbconvert \
             --execute crypto/example_model.ipynb \
             --ExecutePreprocessor.timeout=-1 \
             --to html
+      - name: move-numerai-pickles-to-cached-pickles-dir
+        run: |
+          mkdir -p cached-pickles/
+          mv -f numerai/example_model_v53_ender60.pkl cached-pickles/
+          mv -f numerai/hello_numerai_v53_ender60.pkl cached-pickles/
+          mv -f numerai/feature_neutralization_v53_ender60.pkl cached-pickles/
+          mv -f numerai/target_ensemble_v53_ender60.pkl cached-pickles/
+      - name: generate-publication-candidates-and-provenance
+        run: |
+          python numerai/generate_example_predictions.py \
+            --model cached-pickles/example_model_v53_ender60.pkl \
+            --output-dir generated-example-predictions
+      - name: upload-ender60-validation-evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: v53-ender60-example-model-${{ github.sha }}
+          if-no-files-found: error
+          path: |
+            cached-pickles/*_v53_ender60.pkl
+            generated-example-predictions/*
+            numerai/*.html
+      - name: cache-provenance-for-master
+        if: github.event_name == 'push'
+        run: |
+          cp generated-example-predictions/v53_ender60_provenance.json cached-pickles/
       - name: delete-generated-files
         run: |
-          rm -f numerai/example_model.html
-          rm -f numerai/hello_numerai.html
-          rm -f numerai/feature_neutralization.html
-          rm -f numerai/target_ensemble.html
+          rm -f numerai/*.html
           rm -f signals/example_model.html
           rm -f signals/signals_example_preds.csv
           rm -f signals_example_preds.csv
           rm -f crypto/example_model.html
           rm -f crypto/crypto_example_preds.csv
           rm -f crypto_example_preds.csv
-      - name: move-numerai-pickles-to-cached-pickles-dir
-        run: |
-          mkdir -p cached-pickles/
-          mv -f numerai/example_model.pkl cached-pickles/
-          mv -f numerai/hello_numerai.pkl cached-pickles/
-          mv -f numerai/feature_neutralization.pkl cached-pickles/
-          mv -f numerai/target_ensemble.pkl cached-pickles/
       - name: commit-to-master
+        if: github.event_name == 'push'
         uses: EndBug/add-and-commit@v9
         with:
           add: "cached-pickles/*"

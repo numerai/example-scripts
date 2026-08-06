@@ -14,8 +14,8 @@ This skill is *not* complete after a single promising run. You must run experime
 
 ## Planning checklist (answer before running)
 - State the model idea and novelty.
-- Choose the initial baseline and feature set. Default to `deep_lgbm_ender20_baseline` (feature_set=all) unless the user explicitly requests the small baseline; keep experiments' feature_set aligned with the chosen baseline.
-- Decide the primary metric (`bmc_mean` and `bmc_last_200_eras`) where BMC = Benchmark Model Contribution vs official `v53_lgbm_ender20`.
+- Choose the initial baseline and feature set. Default to `deep_lgbm_ender60_baseline` (feature_set=all) unless the user explicitly requests the small baseline; keep experiments' feature_set aligned with the chosen baseline.
+- Decide the primary metric (`bmc_mean` and `bmc_last_200_eras`) where BMC = Benchmark Model Contribution vs official `v53_lgbm_ender60`.
 - Decide which parameter dimensions to explore based on the core idea (targets, model hyperparameters, ensemble weights, data settings).
 - Or decide that only a minimal round is needed because the change is tiny — but still run multiple variants unless the user explicitly requested exactly one run.
 
@@ -70,7 +70,7 @@ Note that these are examples only. Each idea will call for different sweeps, or 
 ## Baseline alignment
 - Declare which baseline the model is aiming to improve on.
 - Keep `feature_set` aligned with the baseline for comparisons.
-- Default to ender20 (`v53_lgbm_ender20`) as the benchmark reference and plot baseline, even when sweeping; only use the small baseline when explicitly requested.
+- Default to Ender-60 (`v53_lgbm_ender60`) as the benchmark reference and plot baseline, even when sweeping; only use the small baseline when explicitly requested. Pin Ender-20 research explicitly to `target_ender_20` and an Ender-20-named baseline.
 
 ## Experiment organization
 - Keep related runs under a single, well-named folder in `agents/experiments/`.
@@ -84,7 +84,7 @@ Note that these are examples only. Each idea will call for different sweeps, or 
 
 ## Reporting expectations
 - Run experiments in **rounds** and continuously wait for the round to finish so you don't report prematurely.
-- Once you complete your research and stop finding improvements, write a report for the user. It should describe learnings (what worked and what did not), include the final stats table, and run `PYTHONPATH=numerai python3 -m agents.code.analysis.show_experiment benchmark <best_model> --base-benchmark-model v53_lgbm_ender20 --benchmark-data-path numerai/v5.3/full_benchmark_models.parquet --start-era 575 --dark --output-dir <experiment_dir> --baselines-dir numerai/agents/baselines` to generate the cumulative corr + BMC plot (share the output path).
+- Once you complete your research and stop finding improvements, write a report for the user. It should describe learnings (what worked and what did not), include the final stats table, and run `PYTHONPATH=numerai python3 -m agents.code.analysis.show_experiment benchmark <best_model> --base-benchmark-model v53_lgbm_ender60 --benchmark-data-path numerai/v5.3/full_benchmark_models.parquet --start-era 575 --dark --output-dir <experiment_dir> --baselines-dir numerai/agents/baselines` to generate the cumulative corr + BMC plot (share the output path).
 - Use `python -m agents.code.analysis.plot_benchmark_corrs` only when comparing official benchmark model columns, not for experiment BMC curves.
 - Always report:
   - `bmc` (full) and `bmc_last_200_eras`
@@ -97,6 +97,7 @@ Note that these are examples only. Each idea will call for different sweeps, or 
   - Full: `numerai/v5.3/full.parquet`, `numerai/v5.3/full_benchmark_models.parquet`
   - Downsampled (every 4 eras): `numerai/v5.3/downsampled_full.parquet`, `numerai/v5.3/downsampled_full_benchmark_models.parquet`
 - Prefer downsampled for quick iteration; only scale after a clear signal for the final model.
+- Use `target_ender_60` and a 16-era embargo for the default v5.3 workflow. Never rely on generic `target` when the horizon matters.
 
 ## Useful entry points
 - `PYTHONPATH=numerai python3 -m agents.code.modeling` (training + metrics)

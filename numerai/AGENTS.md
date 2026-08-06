@@ -1,6 +1,8 @@
 # Numerai Tournament
 This folder contains examples on how to participate in the Numerai Tournament.
 
+For v5.3, select `target_ender_60` explicitly in maintained training examples. The generic `target` column demonstrates the current default alias only; do not use it when the horizon must remain reproducible.
+
 ## Directory Guide:
 - `agents/`: agentic research framework + training/analysis pipeline (`python -m agents.code.modeling`)
 - `v5.3/` (and other `v*/`): Numerai dataset files (often gitignored locally)

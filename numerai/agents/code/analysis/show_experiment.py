@@ -20,6 +20,10 @@ except ImportError as exc:  # pragma: no cover
     ) from exc
 
 from agents.code.metrics import numerai_metrics
+from agents.code.modeling.utils.constants import (
+    DEFAULT_BENCHMARK_MODEL,
+    DEFAULT_TARGET_COL,
+)
 
 AGENTS_DIR = Path(__file__).resolve().parents[2]
 
@@ -53,7 +57,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--target-col",
         type=str,
-        default="target",
+        default=DEFAULT_TARGET_COL,
         help="Target column name in predictions file.",
     )
     parser.add_argument(
@@ -85,7 +89,7 @@ def parse_args() -> argparse.Namespace:
         default=None,
         help=(
             "Use benchmark model predictions as the baseline instead of a results file. "
-            "Example: v53_lgbm_ender20. If set, base_model can be any label (e.g. 'benchmark')."
+            f"Example: {DEFAULT_BENCHMARK_MODEL}. If set, base_model can be any label (e.g. 'benchmark')."
         ),
     )
     parser.add_argument(
@@ -459,7 +463,7 @@ def main() -> None:
 
     use_benchmark_base = args.base_benchmark_model is not None
     if args.base_model == "benchmark" and args.base_benchmark_model is None:
-        args.base_benchmark_model = "v53_lgbm_ender20"
+        args.base_benchmark_model = DEFAULT_BENCHMARK_MODEL
         use_benchmark_base = True
 
     base_results_path = None
@@ -500,7 +504,7 @@ def main() -> None:
     )
     benchmark_model = args.base_benchmark_model or reference_data.get(
         "benchmark", {}
-    ).get("model", "v53_lgbm_ender20")
+    ).get("model", DEFAULT_BENCHMARK_MODEL)
 
     if args.benchmark_data_path is not None:
         benchmark, benchmark_col = numerai_metrics.load_benchmark_predictions_from_path(

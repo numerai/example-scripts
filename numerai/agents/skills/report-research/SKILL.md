@@ -58,7 +58,7 @@ Default standard plot (baseline = benchmark predictions):
 
 ```bash
 PYTHONPATH=numerai python3 -m agents.code.analysis.show_experiment benchmark <best_model_results_name> \
-  --base-benchmark-model v53_lgbm_ender20 \
+  --base-benchmark-model v53_lgbm_ender60 \
   --benchmark-data-path numerai/v5.3/full_benchmark_models.parquet \
   --start-era 575 --dark \
   --output-dir numerai/agents/experiments/<experiment_name> \

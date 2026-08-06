@@ -38,7 +38,7 @@ if model_type == "XGBRegressor":
 CONFIG = {
     "model": {"type": "XGBRegressor", "params": {"n_estimators": 500}},
     "training": {"cv": {"n_splits": 5}},
-    "data": {"data_version": "v5.3", "feature_set": "small", "target_col": "target", "era_col": "era"},
+    "data": {"data_version": "v5.3", "feature_set": "small", "target_col": "target_ender_60", "embargo_eras": 16, "era_col": "era"},
     "output": {},
     "preprocessing": {},
 }

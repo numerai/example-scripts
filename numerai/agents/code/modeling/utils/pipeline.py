@@ -16,7 +16,9 @@ from .constants import (
     BASE_DIR,
     DEFAULT_BASELINES_DIR,
     DEFAULT_BENCHMARK_MODEL,
+    DEFAULT_EMBARGO_ERAS,
     DEFAULT_OUTPUT_DIR,
+    DEFAULT_TARGET_COL,
 )
 from .data import (
     apply_missing_all_twos_as_nan,
@@ -257,12 +259,12 @@ def run_training(
 
     data_version = data_config.get("data_version", "v5.3")
     feature_set = data_config.get("feature_set", "small")
-    target_col = data_config.get("target_col", "target")
+    target_col = data_config.get("target_col", DEFAULT_TARGET_COL)
     era_col = data_config.get("era_col", "era")
     id_col = data_config.get("id_col", "id")
     full_data_path = data_config.get("full_data_path")
     benchmark_data_path = data_config.get("benchmark_data_path")
-    embargo_eras = data_config.get("embargo_eras", 13)
+    embargo_eras = data_config.get("embargo_eras", DEFAULT_EMBARGO_ERAS)
     benchmark_model = data_config.get("benchmark_model", DEFAULT_BENCHMARK_MODEL)
 
     nan_missing_all_twos = preprocessing_config.get("nan_missing_all_twos", False)

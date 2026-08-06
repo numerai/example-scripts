@@ -301,5 +301,6 @@ Build datasets with `python -m agents.code.data.build_full_datasets`:
 - **Register repo skills**: `ln -s $PWD/numerai/agents/skills/* ~/.codex/skills/`
 - **Network access required** for MCP operations (Codex CLI may need `--yolo` flag)
 - **Always query Python version** before creating pkl files
-- **BMC (Benchmark Model Contribution)** is the key experiment metric (proxy for MMC), computed vs official `v53_lgbm_ender20` benchmark predictions in `*_benchmark_models.parquet`
+- **BMC (Benchmark Model Contribution)** is the key experiment metric (proxy for MMC), computed by default vs official `v53_lgbm_ender60` benchmark predictions in `*_benchmark_models.parquet`.
+- The v5.3 default research target is explicit `target_ender_60` with a 16-era embargo. Ender-20 work must explicitly select `target_ender_20`; never let an Ender-20-named config read generic `target`.
 - **Only Classic tournament (8)** supports pickle uploads

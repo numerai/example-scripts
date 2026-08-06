@@ -9,6 +9,7 @@ import pandas as pd
 
 from agents.code.modeling.utils.model_factory import build_model
 from agents.code.modeling.utils.model_data import ModelDataBatch
+from agents.code.modeling.utils.constants import DEFAULT_EMBARGO_ERAS
 
 
 def _era_sort_key(era):
@@ -25,7 +26,7 @@ def _sorted_unique_eras(eras: Iterable) -> List:
 def era_cv_splits(
     eras: Sequence,
     n_splits: int = 5,
-    embargo: int = 13,
+    embargo: int = DEFAULT_EMBARGO_ERAS,
     mode: str = "expanding",
     min_train_size: int = 1,
 ) -> List[Tuple[List, List]]:
@@ -94,7 +95,7 @@ def build_oof_predictions(
     feature_cols: list[str] | None = None,
 ) -> tuple[pd.DataFrame, dict]:
     cv_n_splits = int(cv_config.get("n_splits", 5))
-    cv_embargo = int(cv_config.get("embargo", 13))
+    cv_embargo = int(cv_config.get("embargo", DEFAULT_EMBARGO_ERAS))
     cv_mode = cv_config.get("mode", "expanding")
     cv_min_train_size = int(cv_config.get("min_train_size", 0))
 

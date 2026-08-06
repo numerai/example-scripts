@@ -28,15 +28,17 @@ DEFAULT_DATA_VERSION_V53 = "v5.3"
 DEFAULT_DATA_VERSION_V52 = "v5.2"
 DEFAULT_DATA_VERSION_V51 = "v5.1"
 DEFAULT_DATA_VERSION_V5 = "v5.0"
-DEFAULT_MODELS = ["v52_teager20", "v51_teager20", "v5_teager20"]
+DEFAULT_MODELS = ["v53_ender60", "v52_teager20", "v51_teager20", "v5_teager20"]
 
 ALIASES: dict[str, Sequence[str]] = {
     "v52_teager20": ("v52_lgbm_teager2b20", "v52_lgbm_teager20"),
     "v51_teager20": ("v51_lgbm_teager2b20", "v51_lgbm_teager20", "v51_teager20"),
     "v5_teager20": ("v5_lgbm_teager2b20", "v5_lgbm_teager20", "v5_teager20"),
     "v53_ender20": ("v53_lgbm_ender20",),
+    "v53_ender60": ("v53_lgbm_ender60",),
     "v52_ender20": ("v52_lgbm_ender20",),
     "ender20": ("v53_lgbm_ender20",),
+    "ender60": ("v53_lgbm_ender60",),
     "v52_cyrus": ("v52_lgbm_cyrusd20",),
     "cyrus": ("v52_lgbm_cyrusd20",),
     "cyrusd20": ("v52_lgbm_cyrusd20",),
@@ -44,7 +46,9 @@ ALIASES: dict[str, Sequence[str]] = {
 
 TARGET_ALIASES: dict[str, Sequence[str]] = {
     "ender20": ("target_ender_20", "target_ender20"),
+    "ender60": ("target_ender_60", "target_ender60"),
     "v53_ender20": ("target_ender_20",),
+    "v53_ender60": ("target_ender_60",),
     "v52_ender20": ("target_ender_20",),
     "cyrus": ("target_cyrusd_20", "target_cyrus_20", "target_cyrus20"),
     "cyrusd20": ("target_cyrusd_20",),
@@ -55,7 +59,7 @@ TARGET_ALIASES: dict[str, Sequence[str]] = {
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description=(
-            "Plot cumulative per-era numerai_corr for benchmark models vs ender/cyrus."
+            "Plot cumulative per-era numerai_corr for benchmark models vs Ender-60/Cyrus."
         )
     )
     parser.add_argument(
@@ -139,8 +143,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--ender-col",
         type=str,
-        default="ender20",
-        help="Target column (or alias) for ender20 correlations.",
+        default="ender60",
+        help="Target column (or alias) for Ender-60 correlations.",
     )
     parser.add_argument(
         "--cyrus-col",
@@ -223,7 +227,7 @@ def _resolve_target_column(name: str, columns: Iterable[str]) -> str:
 
 def _infer_version(name: str, default_version: str, args: argparse.Namespace) -> str:
     lowered = name.lower()
-    if lowered in {"ender20"}:
+    if lowered in {"ender20", "ender60"}:
         return args.v53_version
     if lowered.startswith("v53_"):
         return args.v53_version

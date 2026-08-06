@@ -7,7 +7,7 @@ from pathlib import Path
 from agents.code.modeling.utils.pipeline import run_training
 
 
-class TestSmallLgbmEnder20Baseline(unittest.TestCase):
+class TestSmallLgbmEnder60Baseline(unittest.TestCase):
     def test_pipeline_metrics(self) -> None:
         repo_root = Path(__file__).resolve().parents[2]
         config_path = (
@@ -15,7 +15,7 @@ class TestSmallLgbmEnder20Baseline(unittest.TestCase):
             / "agents"
             / "baselines"
             / "configs"
-            / "small_lgbm_ender20_baseline.py"
+            / "small_lgbm_ender60_baseline.py"
         )
         _, results_path = run_training(config_path)
 
