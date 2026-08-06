@@ -24,11 +24,21 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - name: Install jupyter
+      - name: install-notebook-dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install jupyter
-          pip install -r https://raw.githubusercontent.com/numerai/numerai-predict/refs/heads/master/py3.12/requirements.txt
+          pip install \
+            cloudpickle==3.1.1 \
+            jupyter \
+            lightgbm==4.5.0 \
+            matplotlib==3.10.3 \
+            numerapi==2.20.7 \
+            pandas==2.3.1 \
+            pyarrow==18.1.0 \
+            scikit-learn==1.6.1 \
+            scipy==1.16.0 \
+            seaborn==0.13.2
+          pip install --no-deps numerai-tools==0.4.0
       - name: test-agent-helpers
         run: PYTHONPATH=numerai python -m unittest numerai.agents.tests.test_target_transforms -v
       - name: build-example-model
