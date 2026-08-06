@@ -20,6 +20,12 @@ DATA_VERSION = "v5.3"
 TARGET_COL = "target_ender_60"
 MODEL_ARTIFACT = "example_model_v53_ender60.pkl"
 SOURCE_NOTEBOOK = "numerai/example_model.ipynb"
+MODEL_SOURCES = {
+    "example_model_v53_ender60.pkl": "numerai/example_model.ipynb",
+    "feature_neutralization_v53_ender60.pkl": "numerai/feature_neutralization.ipynb",
+    "hello_numerai_v53_ender60.pkl": "numerai/hello_numerai.ipynb",
+    "target_ensemble_v53_ender60.pkl": "numerai/target_ensemble.ipynb",
+}
 
 
 def sha256(path: Path) -> str:
@@ -88,6 +94,14 @@ def main() -> None:
         "target_col": TARGET_COL,
         "model_artifact": args.model.name,
         "model_sha256": sha256(args.model),
+        "model_artifacts": {
+            artifact: {
+                "source_notebook": source,
+                "sha256": sha256(args.model.parent / artifact),
+            }
+            for artifact, source in MODEL_SOURCES.items()
+            if (args.model.parent / artifact).exists()
+        },
         "predictions": outputs,
     }
     provenance_path = args.output_dir / "v53_ender60_provenance.json"
