@@ -1,27 +1,27 @@
 {
-  "generated_at": "2026-08-06T19:03:57.470243+00:00",
-  "source_commit": "7591317832ecb6709555f56ed1ad7f57031129bd",
+  "generated_at": "2026-08-06T19:22:31.088355+00:00",
+  "source_commit": "085420354bcd88caa29dfb68964bd14fbbc7522a",
   "source_notebook": "numerai/example_model.ipynb",
   "dataset_version": "v5.3",
   "target_col": "target_ender_60",
   "model_artifact": "example_model_v53_ender60.pkl",
-  "model_sha256": "ecb524342b6a54763b8f124a1351d7bd6c9d36dad2482a52abda974c395f959e",
+  "model_sha256": "a84448a2ff635631d111802398fc65fcba8250f943a729d64bbdf255a7b0cd34",
   "model_artifacts": {
     "example_model_v53_ender60.pkl": {
       "source_notebook": "numerai/example_model.ipynb",
-      "sha256": "ecb524342b6a54763b8f124a1351d7bd6c9d36dad2482a52abda974c395f959e"
+      "sha256": "a84448a2ff635631d111802398fc65fcba8250f943a729d64bbdf255a7b0cd34"
     },
     "feature_neutralization_v53_ender60.pkl": {
       "source_notebook": "numerai/feature_neutralization.ipynb",
-      "sha256": "753d3fa7faa1ea354a71898ffc95da5836ca00989cb3f9b494acfd89614341ff"
+      "sha256": "8c45f0f1062bb337ebc33b1f1a9497a7e71ccc380ea054bb238b147c85d26230"
     },
     "hello_numerai_v53_ender60.pkl": {
       "source_notebook": "numerai/hello_numerai.ipynb",
-      "sha256": "c9a49f9168c8f5875859659c0c2c13e6b777a098f3c0e95dfd0d3f1f62dd6b35"
+      "sha256": "f94465d7431f6c53130fb7361b4132184539181e74e43e077db220d7ac3ca1a7"
     },
     "target_ensemble_v53_ender60.pkl": {
       "source_notebook": "numerai/target_ensemble.ipynb",
-      "sha256": "ad1dfeb05616a11d3f0a5b376f26a054c0156e2e003622826101f179c97328b3"
+      "sha256": "fabba10e6701984022e28845f0748252e65ac1ffbdc4d4dcefc141a4061d5775"
     }
   },
   "predictions": {
