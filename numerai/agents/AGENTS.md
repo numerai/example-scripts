@@ -8,6 +8,14 @@ Always check the agents/skills/ folder for skills that match the user request.
 Run commands from `numerai/` (so `agents` is importable), or from repo root with `PYTHONPATH=numerai`.
 Data is expected to live under `numerai/<data_version>/` (e.g. `numerai/v5.3/`), which is often gitignored locally.
 
+## Remote training (scale / all-features)
+
+Do **not** run all-features or full-era LightGBM on the local M2 MacBook. Use the `numerai-remote-compute` skill.
+
+- Default: Hugging Face Jobs **`cpu-performance`** (32 vCPU / 256 GB / $1.90/hr / `--timeout 8h` / `n_jobs=16`).
+- No GPU for LightGBM. XGBoost is not a superior primary booster; vector-leaf only.
+- Ender-60 pickup bookmark: `agents/experiments/ender60_architecture/next_session.md`.
+
 To make these repo skills available to Codex CLI, symlink them into `~/.codex/skills/`:
 `ln -s $PWD/numerai/agents/skills/* ~/.codex/skills/`
 

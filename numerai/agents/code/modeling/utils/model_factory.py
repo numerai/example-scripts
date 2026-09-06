@@ -11,10 +11,20 @@ def build_model(
     if model_type == "LGBMRegressor":
         from agents.code.modeling.models.lgbm_regressor import LGBMRegressor
         model = LGBMRegressor(feature_cols=feature_cols, **model_params)
+    elif model_type == "XGBRegressor":
+        from agents.code.modeling.models.xgb_regressor import XGBRegressor
+        output_targets = model_config.get("output_targets")
+        predict_target = model_config.get("predict_target")
+        model = XGBRegressor(
+            feature_cols=feature_cols,
+            output_targets=output_targets,
+            predict_target=predict_target,
+            **model_params,
+        )
     else:
         raise ValueError(
             "Unsupported model type: "
-            f"{model_type}. Supported types: LGBMRegressor"
+            f"{model_type}. Supported types: LGBMRegressor, XGBRegressor"
         )
 
     target_transform = model_config.get("target_transform")

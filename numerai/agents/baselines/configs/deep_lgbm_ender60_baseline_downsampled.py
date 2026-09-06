@@ -1,12 +1,12 @@
 CONFIG = {
     "data": {
         "data_version": "v5.3",
-        "embargo_eras": 13,
+        "embargo_eras": 16,
         "era_col": "era",
-        "feature_set": "all",
-        "target_col": "target",
-        "benchmark_model": "v53_lgbm_ender20",
         "id_col": "id",
+        "feature_set": "all",
+        "target_col": "target_ender_60",
+        "benchmark_model": "v53_lgbm_ender60",
         "full_data_path": "v5.3/downsampled_full.parquet",
         "benchmark_data_path": "v5.3/downsampled_full_benchmark_models.parquet",
     },
@@ -26,12 +26,12 @@ CONFIG = {
     },
     "output": {
         "output_dir": "baselines",
-        "results_name": "deep_lgbm_ender20_baseline_downsampled",
+        "results_name": "deep_lgbm_ender60_baseline_downsampled",
     },
     "preprocessing": {"missing_value": 2.0, "nan_missing_all_twos": False},
     "training": {
         "cv": {
-            "embargo": 13,
+            "embargo": 16,
             "enabled": True,
             "min_train_size": 0,
             "mode": "expanding",

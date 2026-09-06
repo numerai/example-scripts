@@ -16,12 +16,15 @@ from .constants import (
     BASE_DIR,
     DEFAULT_BASELINES_DIR,
     DEFAULT_BENCHMARK_MODEL,
+    DEFAULT_EMBARGO_ERAS,
     DEFAULT_OUTPUT_DIR,
+    DEFAULT_TARGET_COL,
 )
 from .data import (
     apply_missing_all_twos_as_nan,
     attach_baseline_column,
     attach_benchmark_models,
+    drop_null_target_rows,
     load_features,
     load_full_data,
 )
@@ -78,6 +81,7 @@ def load_and_prepare_data(
     full_data_path: str | Path | None,
     nan_missing_all_twos: bool,
     missing_value: float,
+    extra_cols: list[str] | None = None,
 ) -> tuple[pd.DataFrame, list[str]]:
     features = load_features(napi, data_version, feature_set)
     full = load_full_data(
@@ -88,6 +92,7 @@ def load_and_prepare_data(
         target_col,
         id_col,
         full_data_path=full_data_path,
+        extra_cols=extra_cols,
     )
 
     if nan_missing_all_twos:
@@ -101,10 +106,14 @@ def select_prediction_columns(
     id_col: str | None,
     era_col: str,
     target_col: str,
+    extra_target_cols: list[str] | None = None,
 ) -> pd.DataFrame:
     prediction_cols = [
         col for col in [id_col, era_col, target_col, "prediction", "cv_fold"] if col
     ]
+    for col in extra_target_cols or []:
+        if col and col not in prediction_cols:
+            prediction_cols.append(col)
     prediction_cols = [col for col in prediction_cols if col in predictions.columns]
     return predictions[prediction_cols].copy()
 
@@ -169,7 +178,9 @@ def build_results_payload(
     cv_enabled: bool,
     max_train_samples: int | None,
     sample_seed: int,
+    score_target_col: str | None = None,
 ) -> dict:
+    score_target_col = score_target_col or target_col
     model_meta = {
         "type": model_type,
         "params": model_params,
@@ -183,6 +194,8 @@ def build_results_payload(
         "prediction_batch_size",
         "benchmark",
         "baseline",
+        "output_targets",
+        "predict_target",
     ):
         if key in model_config:
             model_meta[key] = model_config[key]
@@ -197,6 +210,7 @@ def build_results_payload(
             "data_version": data_version,
             "feature_set": feature_set,
             "target": target_col,
+            "score_target": score_target_col,
             "full_data_path": full_data_path,
             "full_rows": int(full.shape[0]),
             "full_eras": int(full[era_col].nunique()),
@@ -257,13 +271,21 @@ def run_training(
 
     data_version = data_config.get("data_version", "v5.3")
     feature_set = data_config.get("feature_set", "small")
-    target_col = data_config.get("target_col", "target")
+    target_col = data_config.get("target_col", DEFAULT_TARGET_COL)
+    score_target_col = data_config.get("score_target_col", target_col)
     era_col = data_config.get("era_col", "era")
     id_col = data_config.get("id_col", "id")
     full_data_path = data_config.get("full_data_path")
     benchmark_data_path = data_config.get("benchmark_data_path")
-    embargo_eras = data_config.get("embargo_eras", 13)
+    embargo_eras = data_config.get("embargo_eras", DEFAULT_EMBARGO_ERAS)
     benchmark_model = data_config.get("benchmark_model", DEFAULT_BENCHMARK_MODEL)
+    extra_cols = list(data_config.get("extra_cols") or [])
+    output_targets = list(model_config.get("output_targets") or [])
+    for col in output_targets:
+        if col not in extra_cols:
+            extra_cols.append(col)
+    if score_target_col not in extra_cols and score_target_col != target_col:
+        extra_cols.append(score_target_col)
 
     nan_missing_all_twos = preprocessing_config.get("nan_missing_all_twos", False)
     missing_value = preprocessing_config.get("missing_value", 2.0)
@@ -289,6 +311,7 @@ def run_training(
         full_data_path=full_data_path,
         nan_missing_all_twos=nan_missing_all_twos,
         missing_value=missing_value,
+        extra_cols=extra_cols,
     )
 
     model_type, model_params = resolve_model_config(model_config)
@@ -329,6 +352,13 @@ def run_training(
             pred_col=pred_col,
         )
 
+    drop_cols = [target_col, score_target_col, *output_targets]
+    before_rows = int(full.shape[0])
+    full = drop_null_target_rows(full, drop_cols)
+    dropped = before_rows - int(full.shape[0])
+    if dropped:
+        print(f"Dropped {dropped} rows with null targets {drop_cols}.")
+
     x_cols = build_x_cols(
         x_groups=x_groups,
         features=features,
@@ -343,6 +373,7 @@ def run_training(
         era_col=era_col,
         target_col=target_col,
         id_col=id_col,
+        multi_target_cols=output_targets or None,
     )
 
     cv_config = dict(training_config.get("cv", {}))
@@ -366,14 +397,27 @@ def run_training(
         feature_cols=features,
     )
 
-    predictions = select_prediction_columns(predictions, id_col, era_col, target_col)
+    if score_target_col != target_col:
+        if id_col not in predictions.columns:
+            raise ValueError("id_col is required when score_target_col differs from target_col.")
+        score_map = full[[id_col, score_target_col]].drop_duplicates(subset=[id_col])
+        predictions = predictions.merge(score_map, on=id_col, how="left")
+        predictions = drop_null_target_rows(predictions, [score_target_col])
+
+    predictions = select_prediction_columns(
+        predictions,
+        id_col,
+        era_col,
+        target_col,
+        extra_target_cols=[score_target_col],
+    )
     predictions_path, predictions_relative = save_predictions(
         predictions, config, config_path, predictions_dir, output_dir
     )
 
     summaries = summarize_predictions(
         predictions_path,
-        target_col,
+        score_target_col,
         data_version,
         benchmark_model,
         benchmark_data_path,
@@ -391,6 +435,7 @@ def run_training(
         data_version=data_version,
         feature_set=feature_set,
         target_col=target_col,
+        score_target_col=score_target_col,
         full_data_path=full_data_path,
         full=full,
         predictions=predictions,

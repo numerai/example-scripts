@@ -21,7 +21,7 @@ This skill is a “meta-workflow” that sequences existing Numerai skills so re
   - run training via `PYTHONPATH=numerai python3 -m agents.code.modeling --config <config> --output-dir <experiment_dir>`
   - track metrics with BMC as primary (`bmc_mean`, `bmc_last_200_eras`)
   - **iterate in rounds** (typically 4–5 configs per round), and keep going until you hit a plateau (per the experiment-design skill)
-  - **scale winners** (bigger feature set and/or full data) before finalizing the best model
+  - **scale winners** (bigger feature set and/or full data) before finalizing the best model — use the `numerai-remote-compute` skill (HF Jobs `cpu-performance`, not the local MacBook, not a GPU for LightGBM)
 
 ### 2) Implement new model types if needed (use numerai-model-implementation)
 

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+from typing import Sequence
 
 import numpy as np
 import pandas as pd
@@ -88,6 +89,17 @@ def load_full_data(
         if id_col and id_col not in df.columns:
             df[id_col] = df.index
     return df
+
+
+def drop_null_target_rows(
+    df: pd.DataFrame,
+    target_cols: Sequence[str],
+) -> pd.DataFrame:
+    """Drop rows whose scoring/training targets are null (immature 60D eras)."""
+    cols = [col for col in dict.fromkeys(target_cols) if col in df.columns]
+    if not cols:
+        return df
+    return df.dropna(subset=cols)
 
 
 def apply_missing_all_twos_as_nan(

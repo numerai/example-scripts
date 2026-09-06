@@ -31,11 +31,21 @@ class ModelDataLoader:
     target_col: str
     id_col: str | None
     x_cols: tuple[str, ...]
+    multi_target_cols: tuple[str, ...] = ()
 
     def load(self, eras: Sequence) -> ModelDataBatch:
         subset = self.full[self.full[self.era_col].isin(eras)]
         X = subset[list(self.x_cols)]
-        y = subset[self.target_col]
+        if self.multi_target_cols:
+            missing = [col for col in self.multi_target_cols if col not in subset.columns]
+            if missing:
+                raise ValueError(
+                    f"Missing multi-target columns: {missing}. "
+                    "Add them via data.extra_cols or model.output_targets."
+                )
+            y = subset[list(self.multi_target_cols)]
+        else:
+            y = subset[self.target_col]
         era = subset[self.era_col]
         ids = subset[self.id_col] if self.id_col else None
         return ModelDataBatch(X=X, y=y, era=era, id=ids)
@@ -48,6 +58,7 @@ def build_model_data_loader(
     era_col: str,
     target_col: str,
     id_col: str | None,
+    multi_target_cols: Iterable[str] | None = None,
 ) -> ModelDataLoader:
     x_cols = tuple(x_cols)
     if not x_cols:
@@ -58,6 +69,7 @@ def build_model_data_loader(
         target_col=target_col,
         id_col=id_col,
         x_cols=x_cols,
+        multi_target_cols=tuple(multi_target_cols or ()),
     )
 
 

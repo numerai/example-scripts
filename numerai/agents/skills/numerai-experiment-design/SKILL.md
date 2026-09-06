@@ -43,7 +43,7 @@ Core loop (repeat for each experiment round):
 2) **Pick the sweep dimension that matches the core idea**: Run a focused sweep only when it serves the research question; otherwise run a single experiment config and evaluate.
 3) **Iterate until improvements stop**: Keep sweeping on that dimension while a round produces a new best metric. If a round does not improve, reassess or pivot.
 4) **Focus when a parameter dominates**: If one parameter clearly drives results, dedicate a full round to mapping its range (including extremes) while holding others fixed.
-5) **Scale only winners**: Once a best option is determined in the small baseline phase, move to phase 2 where you use the deep baseline and all feature_set, and scale the more expensive parameters like n_estimators and network size, if applicable.  
+5) **Scale only winners**: Once a best option is determined in the small baseline phase, move to phase 2 where you use the deep baseline and all feature_set, and scale the more expensive parameters like n_estimators and network size, if applicable. Run scale jobs via the `numerai-remote-compute` skill (HF `cpu-performance` for all-features downsample; 512 GB CPU box only for full-era / 30k trees). Do not train all-features or full-era LightGBM on the local MacBook.
 6) **Full data final**: Run the top config on full data and record the final metrics and final bmc when you stop finding improvements.
 
 ## When to stop (plateau criteria)

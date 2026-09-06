@@ -25,7 +25,7 @@ def _sorted_unique_eras(eras: Iterable) -> List:
 def era_cv_splits(
     eras: Sequence,
     n_splits: int = 5,
-    embargo: int = 13,
+    embargo: int = 16,
     mode: str = "expanding",
     min_train_size: int = 1,
 ) -> List[Tuple[List, List]]:
@@ -94,7 +94,7 @@ def build_oof_predictions(
     feature_cols: list[str] | None = None,
 ) -> tuple[pd.DataFrame, dict]:
     cv_n_splits = int(cv_config.get("n_splits", 5))
-    cv_embargo = int(cv_config.get("embargo", 13))
+    cv_embargo = int(cv_config.get("embargo", 16))
     cv_mode = cv_config.get("mode", "expanding")
     cv_min_train_size = int(cv_config.get("min_train_size", 0))
 
@@ -137,8 +137,14 @@ def build_oof_predictions(
         if id_col and val_data.id is not None:
             fold_predictions[id_col] = _as_array(val_data.id)
         fold_predictions[era_col] = _as_array(val_data.era)
-        fold_predictions[target_col] = _as_array(val_data.y)
-        fold_predictions["prediction"] = np.asarray(preds).ravel()
+        if hasattr(val_data.y, "columns") and target_col in val_data.y.columns:
+            fold_predictions[target_col] = _as_array(val_data.y[target_col])
+        else:
+            fold_predictions[target_col] = _as_array(val_data.y)
+        preds = np.asarray(preds)
+        if preds.ndim == 2:
+            preds = preds[:, 0]
+        fold_predictions["prediction"] = preds.ravel()
         fold_predictions["cv_fold"] = fold_idx
         predictions.append(pd.DataFrame(fold_predictions))
         fold_info.append(
