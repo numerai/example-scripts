@@ -19,14 +19,6 @@ We highly recommend getting started with Agents using the above section. But, if
   <img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"/>
 </a>
 
-- Feature Neutralization: Learn how to measure feature risk and control it with feature neutralization. <a target="_blank" href="https://colab.research.google.com/github/numerai/example-scripts/blob/master/numerai/feature_neutralization.ipynb">
-  <img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"/>
-</a>
-
-- Target Ensemble: Learn how to create an ensemble trained on different targets. <a target="_blank" href="https://colab.research.google.com/github/numerai/example-scripts/blob/master/numerai/target_ensemble.ipynb">
-  <img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"/>
-</a>
-
 - Model Upload: A barebones example of how to build and upload your model to Numerai. <a target="_blank" href="https://colab.research.google.com/github/numerai/example-scripts/blob/master/numerai/example_model.ipynb">
   <img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"/>
 </a>

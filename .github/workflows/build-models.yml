@@ -6,8 +6,6 @@ on:
     # paths:
     #   - example_model.ipynb
     #   - hello_numerai.ipynb
-    #   - feature_neutralization.ipynb
-    #   - target_ensemble.ipynb
     #   - signals/example_model.ipynb
     #   - crypto/example_model.ipynb
     branches:
@@ -42,18 +40,6 @@ jobs:
             --execute numerai/hello_numerai.ipynb \
             --ExecutePreprocessor.timeout=-1 \
             --to html
-      - name: build-feature-neutralization
-        run: |
-          jupyter nbconvert \
-            --execute numerai/feature_neutralization.ipynb \
-            --ExecutePreprocessor.timeout=-1 \
-            --to html
-      - name: build-target-ensemble
-        run: |
-          jupyter nbconvert \
-            --execute numerai/target_ensemble.ipynb \
-            --ExecutePreprocessor.timeout=-1 \
-            --to html
       - name: build-signals-example-model
         run: |
           jupyter nbconvert \
@@ -70,8 +56,6 @@ jobs:
         run: |
           rm -f numerai/example_model.html
           rm -f numerai/hello_numerai.html
-          rm -f numerai/feature_neutralization.html
-          rm -f numerai/target_ensemble.html
           rm -f signals/example_model.html
           rm -f signals/signals_example_preds.csv
           rm -f signals_example_preds.csv
@@ -83,8 +67,6 @@ jobs:
           mkdir -p cached-pickles/
           mv -f numerai/example_model.pkl cached-pickles/
           mv -f numerai/hello_numerai.pkl cached-pickles/
-          mv -f numerai/feature_neutralization.pkl cached-pickles/
-          mv -f numerai/target_ensemble.pkl cached-pickles/
       - name: commit-to-master
         uses: EndBug/add-and-commit@v9
         with:

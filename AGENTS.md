@@ -288,9 +288,8 @@ Build datasets with `python -m agents.code.data.build_full_datasets`:
 ### For Understanding the Tournament
 
 1. Start with `hello_numerai.ipynb` for basics
-2. Review `feature_neutralization.ipynb` for feature risk
-3. Check `target_ensemble.ipynb` for ensemble strategies
-4. Use MCP server to query live tournament data
+2. Use `example_model.ipynb` for a minimal model-upload example
+3. Use MCP server to query live tournament data
 
 ---
 
