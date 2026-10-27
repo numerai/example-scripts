@@ -1,0 +1,317 @@
+{
+  "purpose": "Independent reproduction attempt; original model config was not supplied",
+  "config": {
+    "data_version": "v6.0",
+    "data_round": 1385,
+    "target": "target_jupiter_60",
+    "benchmark": "lgbm_jupiter_60",
+    "base_feature_set": "all",
+    "base_feature_storage": "source features unchanged; country categorical; continuous factors float32; ordinal and transformed values uint8 with a separate missing sentinel",
+    "transform_feature_set": "medium",
+    "training_sample_rows": 200000,
+    "sample_seed": 7,
+    "sampling_order": "original parquet order: train followed by validation",
+    "transform_history": "all train and validation dates, including test rows; one ticker at a time; current date included",
+    "warmup": "52 calendar weeks since first nonmissing feature value and 52 nonmissing trailing observations; mean13 also requires13 observations",
+    "binning": "per-date full-universe average-tie percentile ranks, ceil(rank*5)-1, NaNs preserved",
+    "validation_start": "2019-01-01",
+    "validation_end": "2026-12-31",
+    "retrain_through": "2022-12-31",
+    "retrain_validation_start": "2023-01-01",
+    "embargo_business_days": 60,
+    "blas_threads": 1,
+    "model": {
+      "n_estimators": 300,
+      "learning_rate": 0.05,
+      "max_depth": 5,
+      "num_leaves": 31,
+      "colsample_bytree": 0.1,
+      "verbosity": -1,
+      "random_state": 0,
+      "n_jobs": 8,
+      "deterministic": true,
+      "force_col_wise": true
+    },
+    "claimed_metrics": {
+      "original": {
+        "unity": {
+          "ncorr": 0.0383,
+          "neutral_bmc": 0.0041
+        },
+        "unity_plus_transforms": {
+          "ncorr": 0.0371,
+          "neutral_bmc": 0.0081
+        }
+      },
+      "retrained": {
+        "unity": {
+          "neutral_bmc": 0.0033
+        },
+        "unity_plus_transforms": {
+          "neutral_bmc": 0.0079
+        }
+      }
+    }
+  },
+  "python": "3.13.9",
+  "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+  "packages": {
+    "numpy": "2.5.4",
+    "pandas": "2.3.3",
+    "pyarrow": "26.0.0",
+    "numerapi": "3.1.1",
+    "numerai-tools": "0.7.2",
+    "lightgbm": "4.7.0",
+    "scipy": "1.18.1",
+    "numba": "0.68.0",
+    "matplotlib": "3.11.2",
+    "threadpoolctl": "3.7.0"
+  },
+  "builder_sha256": "3be849c9b3a2b7f8ec04146b4cb18246251082036a978cc24371a61dfc54f5d8",
+  "runner_sha256": "5fb196fdb724d02fecf0cb7a07febb7169f95629c6a9f84448f2f4dc8693d0f9",
+  "config_sha256": "62c80661f74a906f76c317ef8751f199875f274a5b5edf1ba56340e59cb4db7d",
+  "source_post_sha256": "af61a346b700ab56113c2013d2e639365e7e1de29a8ffd908b2dc7e09bb939b7",
+  "data_manifest": [
+    {
+      "name": "features.json",
+      "bytes": 47870,
+      "sha256": "ee6c00bc9d5cb78aaab986630138512945301a3c588865ad61da5d0dea5ff634"
+    },
+    {
+      "name": "train.parquet",
+      "bytes": 2176263434,
+      "sha256": "58c1667a07323b072a12dca1924ec90a6c0adfe2c1100cd2b052930c3ed6f4ce",
+      "rows": 4329443,
+      "columns": 1068,
+      "row_groups": 22
+    },
+    {
+      "name": "validation.parquet",
+      "bytes": 1399929750,
+      "sha256": "f25401e15b88afc70c67cc7474f4a442fcd8ea3aa24248bb884ff1db62e57c84",
+      "rows": 2724886,
+      "columns": 1068,
+      "row_groups": 14
+    },
+    {
+      "name": "validation_benchmark_models.parquet",
+      "bytes": 17308180,
+      "sha256": "ded56f8878582f6086499a6f3ca02d317967309eb075083607236a7dd9e2090c",
+      "rows": 2724886,
+      "columns": 3,
+      "row_groups": 3
+    },
+    {
+      "name": "validation_neutralizer.parquet",
+      "bytes": 4662409660,
+      "sha256": "51cf6d713ba76e522de24d39ff375372ddaeffbce92bf78165f24f8366a45b0e",
+      "rows": 2724886,
+      "columns": 304,
+      "row_groups": 408
+    }
+  ],
+  "matrix": {
+    "rows": 7054329,
+    "base_columns": 1040,
+    "transform_columns": 1400,
+    "continuous_columns": {
+      "1017": {
+        "feature": "feature_adv_20d_factor",
+        "file": "continuous_1017.npy"
+      },
+      "1018": {
+        "feature": "feature_beta_factor",
+        "file": "continuous_1018.npy"
+      },
+      "1019": {
+        "feature": "feature_book_to_price_factor",
+        "file": "continuous_1019.npy"
+      },
+      "1020": {
+        "feature": "feature_dividend_yield_factor",
+        "file": "continuous_1020.npy"
+      },
+      "1021": {
+        "feature": "feature_earnings_yield_factor",
+        "file": "continuous_1021.npy"
+      },
+      "1022": {
+        "feature": "feature_growth_factor",
+        "file": "continuous_1022.npy"
+      },
+      "1023": {
+        "feature": "feature_impact_cost_factor",
+        "file": "continuous_1023.npy"
+      },
+      "1024": {
+        "feature": "feature_market_cap_factor",
+        "file": "continuous_1024.npy"
+      },
+      "1025": {
+        "feature": "feature_momentum_12w_factor",
+        "file": "continuous_1025.npy"
+      },
+      "1026": {
+        "feature": "feature_momentum_26w_factor",
+        "file": "continuous_1026.npy"
+      },
+      "1027": {
+        "feature": "feature_momentum_52w_factor",
+        "file": "continuous_1027.npy"
+      },
+      "1028": {
+        "feature": "feature_momentum_52w_less_4w_factor",
+        "file": "continuous_1028.npy"
+      },
+      "1029": {
+        "feature": "feature_ppo_60d_130d_country_ranknorm",
+        "file": "continuous_1029.npy"
+      },
+      "1030": {
+        "feature": "feature_ppo_60d_90d_country_ranknorm",
+        "file": "continuous_1030.npy"
+      },
+      "1031": {
+        "feature": "feature_price_factor",
+        "file": "continuous_1031.npy"
+      },
+      "1032": {
+        "feature": "feature_rsi_130d_country_ranknorm",
+        "file": "continuous_1032.npy"
+      },
+      "1033": {
+        "feature": "feature_rsi_60d_country_ranknorm",
+        "file": "continuous_1033.npy"
+      },
+      "1034": {
+        "feature": "feature_rsi_90d_country_ranknorm",
+        "file": "continuous_1034.npy"
+      },
+      "1035": {
+        "feature": "feature_trix_130d_country_ranknorm",
+        "file": "continuous_1035.npy"
+      },
+      "1036": {
+        "feature": "feature_trix_60d_country_ranknorm",
+        "file": "continuous_1036.npy"
+      },
+      "1037": {
+        "feature": "feature_value_factor",
+        "file": "continuous_1037.npy"
+      },
+      "1038": {
+        "feature": "feature_volatility_factor",
+        "file": "continuous_1038.npy"
+      }
+    },
+    "preparation_seconds": 350.5288697500073,
+    "kernel_validation": "bit-exact float32 raw and uint8 bins on synthetic edge cases and three actual feature histories for three sampled tickers"
+  },
+  "training_and_evaluation_coverage": [
+    {
+      "period": "original",
+      "available_train_rows": 4329443,
+      "sampled_train_rows": 200000,
+      "sampled_row_indices_sha256": "ddd4247e8ff139bccaf11c084fbb95f596e289b1323cb19955c7d0d6203f6f05",
+      "first_train_date": "2003-01-03",
+      "last_train_date": "2018-12-28",
+      "embargo_end": "2019-03-22",
+      "first_evaluation_date": "2019-03-29",
+      "last_evaluation_date": "2026-07-24",
+      "evaluation_rows_before_benchmark_join": 2558422,
+      "evaluation_dates_before_benchmark_join": 383
+    },
+    {
+      "period": "retrained",
+      "available_train_rows": 5707284,
+      "sampled_train_rows": 200000,
+      "sampled_row_indices_sha256": "e71b5810eda3d93623db47d5ae7f47d91d701730e9c14376110f8d6293dbdba8",
+      "first_train_date": "2003-01-03",
+      "last_train_date": "2022-12-30",
+      "embargo_end": "2023-03-24",
+      "first_evaluation_date": "2023-03-31",
+      "last_evaluation_date": "2026-07-24",
+      "evaluation_rows_before_benchmark_join": 1173934,
+      "evaluation_dates_before_benchmark_join": 174
+    }
+  ],
+  "metrics": [
+    {
+      "period": "original",
+      "variant": "unity",
+      "dates": 383,
+      "first_date": "2019-03-29",
+      "last_date": "2026-07-24",
+      "ncorr": 0.01968530889505392,
+      "neutral_bmc": 0.0014883563476775648,
+      "neutral_bmc_last_200_dates": -0.00012869163331827416,
+      "prediction_benchmark_correlation": 0.4257510049049458,
+      "claimed": {
+        "ncorr": 0.0383,
+        "neutral_bmc": 0.0041
+      },
+      "matches_claimed_to_4_decimals": false,
+      "difference_from_claimed": {
+        "ncorr": -0.018614691104946082,
+        "neutral_bmc": -0.0026116436523224355
+      }
+    },
+    {
+      "period": "original",
+      "variant": "unity_plus_transforms",
+      "dates": 383,
+      "first_date": "2019-03-29",
+      "last_date": "2026-07-24",
+      "ncorr": 0.015960705703166454,
+      "neutral_bmc": 0.00276978436190433,
+      "neutral_bmc_last_200_dates": 0.0015951549992989059,
+      "prediction_benchmark_correlation": 0.32579825856351446,
+      "claimed": {
+        "ncorr": 0.0371,
+        "neutral_bmc": 0.0081
+      },
+      "matches_claimed_to_4_decimals": false,
+      "difference_from_claimed": {
+        "ncorr": -0.021139294296833547,
+        "neutral_bmc": -0.005330215638095669
+      }
+    },
+    {
+      "period": "retrained",
+      "variant": "unity",
+      "dates": 174,
+      "first_date": "2023-03-31",
+      "last_date": "2026-07-24",
+      "ncorr": 0.02311491101052286,
+      "neutral_bmc": 0.0057959252761581445,
+      "neutral_bmc_last_200_dates": 0.0057959252761581445,
+      "prediction_benchmark_correlation": 0.41061473862211584,
+      "claimed": {
+        "neutral_bmc": 0.0033
+      },
+      "matches_claimed_to_4_decimals": false,
+      "difference_from_claimed": {
+        "neutral_bmc": 0.0024959252761581445
+      }
+    },
+    {
+      "period": "retrained",
+      "variant": "unity_plus_transforms",
+      "dates": 174,
+      "first_date": "2023-03-31",
+      "last_date": "2026-07-24",
+      "ncorr": 0.01832398748237031,
+      "neutral_bmc": 0.005528339014505459,
+      "neutral_bmc_last_200_dates": 0.005528339014505459,
+      "prediction_benchmark_correlation": 0.3152490931148677,
+      "claimed": {
+        "neutral_bmc": 0.0079
+      },
+      "matches_claimed_to_4_decimals": false,
+      "difference_from_claimed": {
+        "neutral_bmc": -0.002371660985494542
+      }
+    }
+  ],
+  "total_seconds": 571.5037623750104
+}
