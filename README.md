@@ -12,6 +12,11 @@ cd example-scripts && curl -sL https://numer.ai/install-mcp.sh | bash
 codex exec --yolo "find the best neural network architecture to predict target ender"
 ```
 
+## Data building examples
+
+- [Earnings-release features with Kev](signals/edgar_kev/): score SEC releases with a local language model and join the features by ticker and date.
+- [Time-series features from Unity](numerai/time_series/): apply the sample prompt to the medium feature set, using each ticker's own history for rolling ranks, average differences, weeks since highs, and weeks since changes.
+
 ## Notebooks
 We highly recommend getting started with Agents using the above section. But, if you're looking to kill some time on artisan data science, you can check out our tutorial notebooks here as well: 
 
