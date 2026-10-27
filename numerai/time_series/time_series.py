@@ -46,7 +46,7 @@ def ages(values: np.ndarray, days: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
 
 
 def build_features(data: pd.DataFrame, features: list[str]) -> pd.DataFrame:
-    """Return four features per source feature, keyed by ticker and date.
+    """Return four raw transforms per source feature, keyed by ticker and date.
 
     Input may contain multiple data splits. Sort and group before computing so no
     other ticker or future row enters a calculation. Targets are never used.
@@ -71,8 +71,8 @@ def build_features(data: pd.DataFrame, features: list[str]) -> pd.DataFrame:
         result = np.full((len(data), 4), np.nan, dtype="float32")
         for indices in groups:
             values = pd.Series(data[feature].iloc[indices].to_numpy(dtype="float64"), index=dates[indices])
-            long = values.rolling("364D", min_periods=1)
-            short = values.rolling("91D", min_periods=1)
+            long = values.rolling("364D", min_periods=52)
+            short = values.rolling("91D", min_periods=13)
             high, changed = ages(values.to_numpy(), days[indices])
             transformed = np.column_stack([
                 long.rank(method="average", pct=True).to_numpy(),
@@ -80,12 +80,31 @@ def build_features(data: pd.DataFrame, features: list[str]) -> pd.DataFrame:
                 high,
                 changed,
             ])
+            # A full year of observed history and 52 nonmissing weekly values
+            # are required for the three transforms that use the 52-week window.
+            first_valid = values.first_valid_index()
+            ready = np.zeros(len(values), dtype=bool) if first_valid is None else (
+                (values.index >= first_valid + pd.Timedelta(weeks=52)) & (long.count().to_numpy() >= 52)
+            )
+            transformed[~ready, :3] = np.nan
             transformed[values.isna().to_numpy()] = np.nan
             result[indices] = transformed
         for i, suffix in enumerate(SUFFIXES):
             output[f"{feature}_{suffix}"] = result[:, i]
         print(f"Built {feature}", flush=True)
     return pd.DataFrame(output)
+
+
+def rank_and_bin(data: pd.DataFrame) -> pd.DataFrame:
+    """Replace raw transforms with per-date ranks binned 0-4, preserving NaNs.
+
+    Equal values receive the same average rank. Only tickers present on the same
+    date participate, so changing a future date cannot alter earlier bins.
+    """
+    for feature in [column for column in data if column not in KEYS]:
+        ranks = data.groupby("date")[feature].rank(method="average", pct=True)
+        data[feature] = (np.ceil(ranks * 5) - 1).astype("float32")
+    return data
 
 
 def latest_version(datasets: list[str]) -> str:
@@ -131,7 +150,7 @@ def main() -> None:
     ], ignore_index=True)
     # Overlapping splits may repeat the same observation. Reject conflicting values.
     data = data.drop_duplicates()
-    result = build_features(data, features)
+    result = rank_and_bin(build_features(data, features))
     args.output.parent.mkdir(parents=True, exist_ok=True)
     result.to_parquet(args.output, index=False)
     print(f"Wrote {len(result)} rows and {4 * len(features)} features from {version} to {args.output}")
