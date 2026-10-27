@@ -1,0 +1,8 @@
+beautifulsoup4
+lxml
+numerapi
+numpy
+pandas>=2.3.3,<3
+pyarrow
+requests
+tqdm
