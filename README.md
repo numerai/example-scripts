@@ -15,7 +15,7 @@ codex exec --yolo "find the best neural network architecture to predict target e
 ## Notebooks
 We highly recommend getting started with Agents using the above section. But, if you're looking to kill some time on artisan data science, you can check out our tutorial notebooks here as well: 
 
-- Hello Numerai: Start here if you are new! Explore the dataset and build your first model. <a target="_blank" href="https://colab.research.google.com/github/numerai/example-scripts/blob/master/numerai/v6_example_model.ipynb">
+- Hello Numerai: Start here if you are new! Explore the dataset and build your first model. <a target="_blank" href="https://colab.research.google.com/github/numerai/example-scripts/blob/master/numerai/hello_numerai.ipynb">
   <img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"/>
 </a>
 

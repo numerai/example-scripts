@@ -5,7 +5,7 @@ on:
   push:
     # paths:
     #   - example_model.ipynb
-    #   - v6_example_model.ipynb
+    #   - hello_numerai.ipynb
     #   - signals/example_model.ipynb
     #   - crypto/example_model.ipynb
     branches:
@@ -34,10 +34,10 @@ jobs:
             --execute numerai/example_model.ipynb \
             --ExecutePreprocessor.timeout=-1 \
             --to html
-      - name: build-v6-example-model
+      - name: build-hello-numerai
         run: |
           jupyter nbconvert \
-            --execute numerai/v6_example_model.ipynb \
+            --execute numerai/hello_numerai.ipynb \
             --ExecutePreprocessor.timeout=-1 \
             --to html
       - name: build-signals-example-model
@@ -55,7 +55,7 @@ jobs:
       - name: delete-generated-files
         run: |
           rm -f numerai/example_model.html
-          rm -f numerai/v6_example_model.html
+          rm -f numerai/hello_numerai.html
           rm -f signals/example_model.html
           rm -f signals/signals_example_preds.csv
           rm -f signals_example_preds.csv

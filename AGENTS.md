@@ -287,7 +287,7 @@ Build datasets with `python -m agents.code.data.build_full_datasets`:
 
 ### For Understanding the Tournament
 
-1. Start with `v6_example_model.ipynb` for basics
+1. Start with `hello_numerai.ipynb` for basics
 2. Use `example_model.ipynb` for a minimal model-upload example
 3. Use MCP server to query live tournament data
 
