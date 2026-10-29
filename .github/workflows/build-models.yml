@@ -22,12 +22,12 @@ jobs:
       - uses: actions/checkout@v3
       - uses: actions/setup-python@v5
         with:
-          python-version: "3.12"
+          python-version: "3.13"
       - name: Install jupyter
         run: |
           python -m pip install --upgrade pip
           pip install jupyter
-          pip install -r https://raw.githubusercontent.com/numerai/numerai-predict/refs/heads/master/py3.12/requirements.txt
+          pip install -r https://raw.githubusercontent.com/numerai/numerai-predict/refs/heads/master/py3.13/requirements.txt
       - name: build-example-model
         run: |
           jupyter nbconvert \
